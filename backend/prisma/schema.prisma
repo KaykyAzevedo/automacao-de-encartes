@@ -1,0 +1,106 @@
+// Schema do Encarte Gerador
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  companies     Company[]
+  encarteDrafts EncarteDraft[]
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  style     String   @default("sofisticado") // "sofisticado" ou "agressivo"
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores   Store[]
+  products Product[]
+  themes   Theme[]
+  drafts   EncarteDraft[]
+}
+
+model Store {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name          String
+  address       String
+  logo          String?
+  deliveryPhone String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Theme {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  themeName   String // "Tema Ouro", "Tema Verde", etc
+  day         String // "segunda", "terca", etc
+  format1Svg  String   @db.Text // 1 item
+  format4Svg  String   @db.Text // 4 itens
+  format8Svg  String   @db.Text // 8 itens
+  format10Svg String   @db.Text // 10 itens
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  photoS3Url String // foto do banco publico
+  userPhotos String[] @default([]) // fotos upload do user
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model EncarteDraft {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Input do user
+  productList String @db.Text // "Agriao 1,48 un\nRucula..."
+
+  // Selecoes do user
+  selectedThemeId String?
+  selectedFormat  Int     @default(4) // 1, 4, 8 ou 10
+
+  // Dados processados
+  parsedProducts Json // [{name, price, unit, photoUrl}]
+
+  // Edicoes manuais
+  edits Json @default("{}") // {photoSize, priceSize, nameSize, etc}
+
+  // Output
+  pngUrl String?
+  jpgUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
