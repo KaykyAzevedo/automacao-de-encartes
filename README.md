@@ -30,6 +30,25 @@ npm install
 npm run dev
 ```
 
+### Banco de dados
+
+Requer PostgreSQL rodando localmente (testado com o 18). Crie os dois bancos
+uma unica vez - o segundo e o shadow database, usado pelo `prisma migrate dev`
+para validar as migrations:
+
+```sql
+CREATE DATABASE encarte;
+CREATE DATABASE encarte_shadow;
+```
+
+Coloque a senha do usuario `postgres` em `DATABASE_URL` e `SHADOW_DATABASE_URL`
+no `backend/.env`, e a mesma `DATABASE_URL` no `frontend/.env.local` (o adapter
+do NextAuth escreve direto nas tabelas). Depois:
+
+```bash
+npm run db:migrate -w backend
+```
+
 Frontend em http://localhost:3000, backend em http://localhost:5000.
 
 ## Formatos de saida
