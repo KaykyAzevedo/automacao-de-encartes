@@ -37,3 +37,26 @@ Frontend em http://localhost:3000, backend em http://localhost:5000.
 - Feed: 1080x1350
 - Stories: 1080x1920
 - Grades de 1, 4, 8 ou 10 itens
+
+## Autenticacao (Google)
+
+O login usa NextAuth v4 com adapter Prisma e sessao no banco.
+As credenciais do Google precisam ser criadas por voce:
+
+1. Acesse https://console.cloud.google.com
+2. Crie um projeto (ou selecione um existente)
+3. APIs & Services > OAuth consent screen
+   - User type: External
+   - Preencha nome do app, email de suporte e email do desenvolvedor
+   - Em Test users, adicione o seu proprio email
+4. APIs & Services > Credentials > Create credentials > OAuth client ID
+   - Application type: Web application
+   - Authorized JavaScript origins: http://localhost:3000
+   - Authorized redirect URIs: http://localhost:3000/api/auth/callback/google
+5. Copie Client ID e Client Secret para frontend/.env.local:
+   GOOGLE_CLIENT_ID=...
+   GOOGLE_CLIENT_SECRET=...
+6. Reinicie o dev server
+
+Rotas: `/login` (publica), `/dashboard` (exige sessao), `/` redireciona
+conforme o estado do login.
