@@ -112,3 +112,17 @@ npm run db:seed-produtos -w backend
 E idempotente: roda de novo sem duplicar, so atualiza `photoS3Url`
 se o slug mudar. Usa a empresa "Empório Hortifruti" do usuario local,
 criando-a se ainda nao existir.
+
+## Upload de arquivos
+
+`POST /api/upload` recebe `multipart/form-data` no campo `file` (PNG,
+JPG ou WEBP, ate 8 MB) e devolve `{ "url": "..." }`. Exige sessao,
+igual ao resto da API.
+
+Controlado por `STORAGE_MODE`, mesmo padrao do `AUTH_MODE`:
+
+- **local** (padrao) - salva em `backend/uploads/`, servido pelo
+  proprio backend em `/uploads/<arquivo>`. Sem custo, sem conta AWS.
+- **s3** - envia para um bucket AWS S3. Guia completo de configuracao
+  (bucket, politica de leitura publica, CORS, credencial IAM) em
+  [`backend/aws/README.md`](backend/aws/README.md).

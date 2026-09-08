@@ -6,3 +6,6 @@ dist/
 
 # Prisma Client gerado (recriado por `prisma generate`)
 src/generated/
+
+# Arquivos enviados via /api/upload em STORAGE_MODE=local
+uploads/

@@ -1,0 +1,14 @@
+[
+  {
+    "AllowedMethods": ["GET"],
+    "AllowedOrigins": ["*"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  },
+  {
+    "AllowedMethods": ["PUT"],
+    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  }
+]

@@ -1,7 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
+import { MulterError } from "multer";
 import { ZodError } from "zod";
 
 import { AppError } from "../lib/errors";
+
+const MENSAGENS_MULTER: Record<string, string> = {
+  LIMIT_FILE_SIZE: "Arquivo maior que o limite permitido (8 MB)",
+  LIMIT_UNEXPECTED_FILE: "Tipo de arquivo não permitido (use PNG, JPG ou WEBP)",
+};
 
 export function errorHandler(
   err: unknown,
@@ -17,6 +23,12 @@ export function errorHandler(
         mensagem: i.message,
       })),
     });
+  }
+
+  if (err instanceof MulterError) {
+    return res
+      .status(400)
+      .json({ error: MENSAGENS_MULTER[err.code] ?? err.message });
   }
 
   if (err instanceof AppError) {

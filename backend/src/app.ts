@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import { join } from "node:path";
 
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -12,6 +13,9 @@ export const app = express();
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// arquivos enviados via /api/upload quando STORAGE_MODE=local
+app.use("/uploads", express.static(join(__dirname, "..", "uploads")));
 
 app.use(routes);
 
