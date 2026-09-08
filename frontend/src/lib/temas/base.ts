@@ -104,14 +104,8 @@ export const FUNDO = `
 export function cabecalho(compacto: boolean): string {
   if (!compacto) {
     return `
-  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,52) scale(0.72)"/></g>
-  <text class="script" x="540" y="152" text-anchor="middle" font-size="96" fill="#ffffff">Empório</text>
-  <g stroke="#ffffff" stroke-width="1.6" opacity="0.85">
-    <line x1="404" y1="181" x2="452" y2="181"/>
-    <line x1="628" y1="181" x2="676" y2="181"/>
-  </g>
-  <text class="sans" x="540" y="188" text-anchor="middle" font-size="23"
-        letter-spacing="9" fill="#ffffff" font-weight="500">HORTIFRUTI</text>
+  <image href="/marca/logo-emporio-branco.png" x="350" y="8" width="380" height="208"
+         preserveAspectRatio="xMidYMid meet"/>
 
   <g class="sans" fill="#ececec" font-size="21" letter-spacing="4.5" font-weight="500">
     <text x="66" y="238">{{SELO_1}}</text>
@@ -146,14 +140,8 @@ export function cabecalho(compacto: boolean): string {
   }
 
   return `
-  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,38) scale(0.6)"/></g>
-  <text class="script" x="540" y="122" text-anchor="middle" font-size="76" fill="#ffffff">Empório</text>
-  <g stroke="#ffffff" stroke-width="1.4" opacity="0.85">
-    <line x1="424" y1="146" x2="462" y2="146"/>
-    <line x1="618" y1="146" x2="656" y2="146"/>
-  </g>
-  <text class="sans" x="540" y="152" text-anchor="middle" font-size="19"
-        letter-spacing="7.5" fill="#ffffff" font-weight="500">HORTIFRUTI</text>
+  <image href="/marca/logo-emporio-branco.png" x="390" y="6" width="300" height="164"
+         preserveAspectRatio="xMidYMid meet"/>
 
   <g class="sans" fill="#ececec" font-size="18" letter-spacing="4" font-weight="500">
     <text x="60" y="196">{{SELO_1}}</text>

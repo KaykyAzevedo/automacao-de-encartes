@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Erro } from "@/components/ui/Card";
 import { Campo, Input, Select } from "@/components/ui/Input";
+import { LogoPreview } from "@/components/ui/LogoPreview";
 import { useToast } from "@/components/ui/Toast";
 import { useAtualizarEmpresa, useCriarEmpresa } from "@/hooks/useCompanies";
 import { ApiError } from "@/lib/api";
@@ -118,15 +119,18 @@ export function FormCompany({
       </Campo>
 
       <Campo label="URL do logo (opcional)" erro={erros.logo}>
-        <Input
-          value={logo}
-          onChange={(e) => {
-            setLogo(e.target.value);
-            limpaErro("logo");
-          }}
-          placeholder="https://..."
-          disabled={salvando}
-        />
+        <div className="flex items-center gap-3">
+          <Input
+            value={logo}
+            onChange={(e) => {
+              setLogo(e.target.value);
+              limpaErro("logo");
+            }}
+            placeholder="https://..."
+            disabled={salvando}
+          />
+          <LogoPreview url={logo} alt="Prévia do logo" />
+        </div>
       </Campo>
 
       {erroGeral ? <Erro>{erroGeral}</Erro> : null}
