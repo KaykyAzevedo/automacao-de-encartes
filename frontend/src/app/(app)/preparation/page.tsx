@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 import { FormCompany } from "@/components/preparation/FormCompany";
 import { FormStore } from "@/components/preparation/FormStore";
-import { FormTheme } from "@/components/preparation/FormTheme";
 import { ListCompanies } from "@/components/preparation/ListCompanies";
 import { ListStores } from "@/components/preparation/ListStores";
 import { Button } from "@/components/ui/Button";
@@ -126,8 +127,22 @@ export default function PreparationPage() {
           )}
         </Secao>
 
-        <Secao titulo="Temas" descricao="Arte de fundo por dia da semana">
-          <FormTheme />
+        <Secao
+          titulo="Temas"
+          descricao="Arte de fundo por dia da semana"
+          acao={
+            <Link
+              href="/preparation/themes"
+              className="text-xs font-medium underline underline-offset-4"
+            >
+              Gerenciar
+            </Link>
+          }
+        >
+          <SecaoVazia>
+            Cada tema tem uma arte por formato (1, 2, 4, 6, 8 e 10 itens).
+            Clique em &ldquo;Gerenciar&rdquo; para ver, criar ou editar.
+          </SecaoVazia>
         </Secao>
       </div>
     </div>

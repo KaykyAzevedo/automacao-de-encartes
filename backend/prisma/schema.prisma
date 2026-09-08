@@ -69,7 +69,9 @@ model Theme {
   themeName   String // "Tema Ouro", "Tema Verde", etc
   day         String // "segunda", "terca", etc
   format1Svg  String   @db.Text // 1 item
+  format2Svg  String   @db.Text // 2 itens
   format4Svg  String   @db.Text // 4 itens
+  format6Svg  String   @db.Text // 6 itens
   format8Svg  String   @db.Text // 8 itens
   format10Svg String   @db.Text // 10 itens
   createdAt   DateTime @default(now())

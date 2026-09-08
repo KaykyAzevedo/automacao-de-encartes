@@ -39,7 +39,9 @@ export const criarThemeSchema = z.object({
     message: `day deve ser um de: ${DIAS_SEMANA.join(", ")}`,
   }),
   format1Svg: svgValido,
+  format2Svg: svgValido,
   format4Svg: svgValido,
+  format6Svg: svgValido,
   format8Svg: svgValido,
   format10Svg: svgValido,
 });
@@ -49,7 +51,9 @@ export const atualizarThemeSchema = z
     themeName: z.string().trim().min(1).max(80).optional(),
     day: z.enum(DIAS_SEMANA).optional(),
     format1Svg: svgValido.optional(),
+    format2Svg: svgValido.optional(),
     format4Svg: svgValido.optional(),
+    format6Svg: svgValido.optional(),
     format8Svg: svgValido.optional(),
     format10Svg: svgValido.optional(),
   })
