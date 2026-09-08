@@ -1,4 +1,9 @@
-import { TEMAS_PROMOCAO_DO_DIA } from "@/lib/temas/promocaoDoDia";
+import {
+  construirTemasPromocaoDoDia,
+  ESCALA_PADRAO,
+  TEMAS_PROMOCAO_DO_DIA,
+  type EscalasTema,
+} from "@/lib/temas/promocaoDoDia";
 import { renderizarTema } from "@/lib/temas/render";
 import type {
   DadosEncarte,
@@ -7,6 +12,8 @@ import type {
   Tema,
 } from "@/lib/temas/tipos";
 import type { FormatoEncarte } from "@/types";
+
+export type { EscalasTema } from "@/lib/temas/promocaoDoDia";
 
 export interface EncartePreviewerProps {
   /** produtos a exibir; so os primeiros N (conforme o formato) sao usados */
@@ -20,23 +27,39 @@ export interface EncartePreviewerProps {
   selo?: string[];
   lojas: LojaEncarte[];
   validade: string;
+  /** 0.5 a 1.5 (50% a 150%): tamanho de foto/nome/preco (Etapa 18) */
+  escalas?: EscalasTema;
   className?: string;
 }
 
-const TEMAS_POR_ID = new Map(TEMAS_PROMOCAO_DO_DIA.map((t) => [t.id, t]));
+const TEMAS_POR_ID_PADRAO = new Map(
+  TEMAS_PROMOCAO_DO_DIA.map((t) => [t.id, t])
+);
 
 function encontrarTema(
   formato: FormatoEncarte,
-  temaId: string | undefined
+  temaId: string | undefined,
+  escalas: EscalasTema
 ): Tema | undefined {
-  if (temaId) return TEMAS_POR_ID.get(temaId);
-  return TEMAS_PROMOCAO_DO_DIA.find((t) => t.formato === formato);
+  // sem escala customizada: usa o array pronto, sem reconstruir nada
+  const foiCustomizado =
+    escalas.foto !== 1 || escalas.nome !== 1 || escalas.preco !== 1;
+
+  const lista = foiCustomizado
+    ? construirTemasPromocaoDoDia(escalas)
+    : TEMAS_PROMOCAO_DO_DIA;
+
+  if (temaId) {
+    if (!foiCustomizado) return TEMAS_POR_ID_PADRAO.get(temaId);
+    return lista.find((t) => t.id === temaId);
+  }
+  return lista.find((t) => t.formato === formato);
 }
 
-// Renderizacao estatica do encarte: recebe os dados prontos e devolve
-// o SVG do template preenchido. Sem estado, sem edicao - so troca o
-// conteudo. O ajuste manual de tamanho de foto/nome/preco (previsto no
-// MVP original) entra numa etapa futura, por cima deste componente.
+// Renderizacao do encarte: recebe os dados prontos (e opcionalmente as
+// escalas de foto/nome/preco) e devolve o SVG do template preenchido.
+// Componente puro (sem hooks) de proposito: e usado tanto em Server
+// Components (/temas) quanto em paginas client (/generate-encarte).
 export function EncartePreviewer({
   produtos,
   temaId,
@@ -46,9 +69,10 @@ export function EncartePreviewer({
   selo = [],
   lojas,
   validade,
+  escalas = ESCALA_PADRAO,
   className = "",
 }: EncartePreviewerProps) {
-  const tema = encontrarTema(formato, temaId);
+  const tema = encontrarTema(formato, temaId, escalas);
 
   if (!tema) {
     return (

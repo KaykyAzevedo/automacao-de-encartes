@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
+import { SizeEditor } from "@/components/encarte/SizeEditor";
 import { Button } from "@/components/ui/Button";
 import { Card, Erro, SecaoVazia } from "@/components/ui/Card";
 import { Campo, Select } from "@/components/ui/Input";
@@ -11,6 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { matchProduct, type ResultadoMatch } from "@/lib/match";
 import { parsearLista, type LinhaProcessada } from "@/lib/parserLista";
+import { ESCALA_PADRAO, type EscalasTema } from "@/lib/temas/promocaoDoDia";
 import type { FormatoEncarte } from "@/types";
 
 // So existe um tema hoje. O SELECT ja fica pronto para os outros
@@ -63,6 +65,7 @@ export default function GenerateEncartePage() {
 
   const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
   const [formato, setFormato] = useState<FormatoEncarte>(4);
+  const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
 
   const empresa = empresas?.[0];
 
@@ -311,16 +314,28 @@ export default function GenerateEncartePage() {
 
             {resultados ? (
               itensParaPreview.length > 0 ? (
-                <EncartePreviewer
-                  produtos={itensParaPreview}
-                  temaId={`${temaFamilia}-${formato}`}
-                  formato={formato}
-                  lojas={LOJAS_PADRAO}
-                  validade={new Date().toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                />
+                <>
+                  <Card>
+                    <h2 className="mb-3 text-sm font-semibold">
+                      Ajustar tamanhos
+                    </h2>
+                    <SizeEditor
+                      currentSizes={escalas}
+                      onSizeChange={setEscalas}
+                    />
+                  </Card>
+                  <EncartePreviewer
+                    produtos={itensParaPreview}
+                    temaId={`${temaFamilia}-${formato}`}
+                    formato={formato}
+                    lojas={LOJAS_PADRAO}
+                    validade={new Date().toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                    escalas={escalas}
+                  />
+                </>
               ) : (
                 <Erro>
                   Nenhum produto foi reconhecido ainda. Escolha uma sugestão na
