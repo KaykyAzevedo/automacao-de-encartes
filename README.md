@@ -94,3 +94,21 @@ As credenciais precisam ser criadas por voce:
 
 Rotas: `/login` (publica), `/dashboard` (exige sessao), `/` redireciona
 conforme o estado do login.
+
+## Banco de fotos de produtos
+
+As fotos ficam em `frontend/public/produtos/`, servidas como arquivo
+estatico do Next (URL `/produtos/<slug>.png`). Nomes de arquivo sem
+espaco, acento ou maiuscula, para nunca precisar de URL-encoding.
+
+`backend/prisma/seed-data/produtos.json` mapeia nome de exibicao (com
+acento, para o usuario ler) a slug do arquivo. Popula ou atualiza o
+banco com:
+
+```bash
+npm run db:seed-produtos -w backend
+```
+
+E idempotente: roda de novo sem duplicar, so atualiza `photoS3Url`
+se o slug mudar. Usa a empresa "Empório Hortifruti" do usuario local,
+criando-a se ainda nao existir.
