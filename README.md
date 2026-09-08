@@ -7,8 +7,7 @@ escolhidos e exporta em PNG ou JPG.
 ## Estrutura
 
 - `frontend/` - Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- `backend/` - Node.js + Express + TypeScript
-- `database/` - configuracao de conexao e migrations
+- `backend/` - Node.js + Express + TypeScript, com as migrations do Prisma em `backend/prisma/`
 
 ## Setup
 
