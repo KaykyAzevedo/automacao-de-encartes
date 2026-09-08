@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-
 import { Card } from "@/components/ui/Card";
-import { authOptions } from "@/lib/auth";
+import { getUsuarioAtual } from "@/lib/session";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
-  const user = session!.user;
+  const user = (await getUsuarioAtual())!;
 
   return (
     <div className="mx-auto max-w-4xl">

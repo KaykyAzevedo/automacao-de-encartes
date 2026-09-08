@@ -57,10 +57,25 @@ Frontend em http://localhost:3000, backend em http://localhost:5000.
 - Stories: 1080x1920
 - Grades de 1, 4, 8 ou 10 itens
 
-## Autenticacao (Google)
+## Autenticacao
 
-O login usa NextAuth v4 com adapter Prisma e sessao no banco.
-As credenciais do Google precisam ser criadas por voce:
+Controlada pela variavel `AUTH_MODE`, que precisa ter o mesmo valor no
+`backend/.env` e no `frontend/.env.local`.
+
+### AUTH_MODE=local (padrao)
+
+Nao ha login. O app opera como um usuario local fixo, criado sob demanda
+a partir de `LOCAL_USER_EMAIL`. A tela de login some e `/login` redireciona
+para o dashboard. Serve para uso pessoal na propria maquina.
+
+Os dados continuam tendo dono: empresas, lojas e produtos ficam ligados a
+esse usuario, entao trocar para o modo google depois nao exige migracao.
+
+### AUTH_MODE=google
+
+Exige login com Google via NextAuth, com sessao no banco. Rotas internas
+redirecionam para `/login` e a API responde 401 sem sessao valida.
+As credenciais precisam ser criadas por voce:
 
 1. Acesse https://console.cloud.google.com
 2. Crie um projeto (ou selecione um existente)

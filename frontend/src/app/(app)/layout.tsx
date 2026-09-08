@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ToastProvider } from "@/components/ui/Toast";
-import { authOptions } from "@/lib/auth";
+import { getUsuarioAtual, MODO_AUTH } from "@/lib/session";
 
 // Shell das telas internas. Fica num route group para o /login
 // continuar sem header e sem sidebar.
@@ -14,17 +13,18 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
+  const usuario = await getUsuarioAtual();
+  if (!usuario) redirect("/login");
 
   return (
     <QueryProvider>
       <ToastProvider>
         <div className="flex min-h-screen flex-col">
           <Header
-            nome={session.user.name}
-            email={session.user.email}
-            imagem={session.user.image}
+            nome={usuario.name}
+            email={usuario.email}
+            imagem={usuario.image}
+            mostrarLogout={MODO_AUTH === "google"}
           />
           <div className="flex flex-1 flex-col md:flex-row">
             <Sidebar />

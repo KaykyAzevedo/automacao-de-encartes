@@ -6,10 +6,12 @@ export function Header({
   nome,
   email,
   imagem,
+  mostrarLogout = true,
 }: {
   nome: string | null | undefined;
   email: string | null | undefined;
   imagem: string | null | undefined;
+  mostrarLogout?: boolean;
 }) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
@@ -33,7 +35,7 @@ export function Header({
             className="rounded-full"
           />
         ) : null}
-        <SignOut />
+        {mostrarLogout ? <SignOut /> : null}
       </div>
     </header>
   );

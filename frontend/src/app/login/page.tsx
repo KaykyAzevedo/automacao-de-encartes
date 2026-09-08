@@ -1,12 +1,14 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { SignIn } from "@/components/auth/SignIn";
-import { authOptions } from "@/lib/auth";
+import { getUsuarioAtual, MODO_AUTH } from "@/lib/session";
 
 export default async function LoginPage() {
-  const session = await getServerSession(authOptions);
-  if (session) redirect("/dashboard");
+  // no modo local nao ha o que logar
+  if (MODO_AUTH === "local") redirect("/dashboard");
+
+  const usuario = await getUsuarioAtual();
+  if (usuario) redirect("/dashboard");
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
