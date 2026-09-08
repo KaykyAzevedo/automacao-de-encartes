@@ -8,6 +8,7 @@ export default defineConfig({
     shadowDatabase: {
       url: process.env["SHADOW_DATABASE_URL"],
     },
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     url: process.env["DATABASE_URL"],

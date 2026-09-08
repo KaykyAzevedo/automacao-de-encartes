@@ -97,21 +97,35 @@ conforme o estado do login.
 
 ## Banco de fotos de produtos
 
-As fotos ficam em `frontend/public/produtos/`, servidas como arquivo
-estatico do Next (URL `/produtos/<slug>.png`). Nomes de arquivo sem
-espaco, acento ou maiuscula, para nunca precisar de URL-encoding.
+As fotos ficam em `frontend/public/banco-fotos/`, servidas como
+arquivo estatico do Next (URL `/banco-fotos/<slug>.png`). Nomes de
+arquivo sem espaco, acento ou maiuscula, para nunca precisar de
+URL-encoding. PNG com fundo transparente.
 
-`backend/prisma/seed-data/produtos.json` mapeia nome de exibicao (com
-acento, para o usuario ler) a slug do arquivo. Popula ou atualiza o
-banco com:
+`backend/prisma/seed-data/banco-fotos.json` mapeia nome de exibicao
+(com acento, para o usuario ler) a slug do arquivo. Popula ou atualiza
+o banco com:
 
 ```bash
-npm run db:seed-produtos -w backend
+npm run db:seed -w backend
 ```
+
+(equivalente a `npx prisma db seed`, convencao oficial do Prisma;
+o comando esta configurado em `backend/prisma7.config.ts`)
 
 E idempotente: roda de novo sem duplicar, so atualiza `photoS3Url`
 se o slug mudar. Usa a empresa "Empório Hortifruti" do usuario local,
-criando-a se ainda nao existir.
+criando-a se ainda nao existir - o app roda para um unico usuario, e
+uma empresa "admin" separada so fragmentaria os dados.
+
+Para adicionar mais fotos: coloque os PNGs em
+`frontend/public/banco-fotos/`, acrescente `{ "nome": "...", "slug":
+"...png" }` em `banco-fotos.json` e rode o seed de novo.
+
+Com `STORAGE_MODE=s3` (ver secao de upload abaixo), o `photoS3Url`
+gerado pelo seed deve apontar para o bucket em vez do caminho local -
+o prefixo `banco-fotos/` dentro do bucket ja esta documentado em
+`backend/aws/README.md`.
 
 ## Upload de arquivos
 
