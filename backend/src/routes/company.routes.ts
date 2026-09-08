@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { companyController } from "../controllers/company.controller";
+import { storeController } from "../controllers/store.controller";
 import { requireAuth } from "../middlewares/requireAuth";
 
 export const companyRoutes = Router();
@@ -13,3 +14,6 @@ companyRoutes.get("/", companyController.listar);
 companyRoutes.get("/:id", companyController.buscar);
 companyRoutes.put("/:id", companyController.atualizar);
 companyRoutes.delete("/:id", companyController.remover);
+
+// lojas de uma empresa
+companyRoutes.get("/:companyId/stores", storeController.listarPorEmpresa);
