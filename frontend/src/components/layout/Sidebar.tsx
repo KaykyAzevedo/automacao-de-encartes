@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/dashboard", rotulo: "Dashboard" },
   { href: "/preparation", rotulo: "Preparação" },
   { href: "/temas", rotulo: "Temas" },
+  { href: "/generate-encarte", rotulo: "Gerar encarte" },
 ];
 
 export function Sidebar() {
