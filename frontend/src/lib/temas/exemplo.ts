@@ -81,9 +81,21 @@ const BASE = {
       whatsapp: "(21) 97510-3253",
     },
   ],
-  validade: "08/09",
 };
 
+// Data sempre a de hoje - nunca fixa, pra nao ficar desatualizada como
+// um valor gravado no codigo ficaria a partir do dia seguinte.
+function validadeHoje(): string {
+  return new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export function exemploCom(quantidade: number): DadosEncarte {
-  return { ...BASE, itens: CATALOGO.slice(0, quantidade) };
+  return {
+    ...BASE,
+    validade: validadeHoje(),
+    itens: CATALOGO.slice(0, quantidade),
+  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
 import { SizeEditor } from "@/components/encarte/SizeEditor";
@@ -10,9 +10,16 @@ import { Campo, Select } from "@/components/ui/Input";
 import { SkeletonLista } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
+import {
+  baixarBlob,
+  exportarEncarte,
+  RESOLUCOES,
+  type FormatoArquivo,
+} from "@/lib/exportarEncarte";
 import { matchProduct, type ResultadoMatch } from "@/lib/match";
 import { parsearLista, type LinhaProcessada } from "@/lib/parserLista";
 import { ESCALA_PADRAO, type EscalasTema } from "@/lib/temas/promocaoDoDia";
+import { uploadArquivo } from "@/lib/upload";
 import type { FormatoEncarte } from "@/types";
 
 // So existe um tema hoje. O SELECT ja fica pronto para os outros
@@ -66,6 +73,11 @@ export default function GenerateEncartePage() {
   const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
   const [formato, setFormato] = useState<FormatoEncarte>(4);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
+
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [resolucaoIndex, setResolucaoIndex] = useState(0);
+  const [exportando, setExportando] = useState<FormatoArquivo | null>(null);
+  const [linkPersistente, setLinkPersistente] = useState<string | null>(null);
 
   const empresa = empresas?.[0];
 
@@ -130,6 +142,47 @@ export default function GenerateEncartePage() {
       reconhecidos === respostas.length ? "sucesso" : "erro",
       `${reconhecidos} de ${respostas.length} produto(s) reconhecido(s) automaticamente.`
     );
+  }
+
+  async function baixar(formato: FormatoArquivo) {
+    if (!previewRef.current) return;
+    setExportando(formato);
+    setLinkPersistente(null);
+    try {
+      const resolucao = RESOLUCOES[resolucaoIndex];
+      const blob = await exportarEncarte(
+        previewRef.current,
+        resolucao,
+        formato
+      );
+      const extensao = formato === "png" ? "png" : "jpg";
+      const nomeArquivo = `encarte-${resolucao.largura}x${resolucao.altura}.${extensao}`;
+
+      // o download acontece na hora, direto do navegador - nao depende
+      // do proximo passo (upload) para funcionar
+      baixarBlob(blob, nomeArquivo);
+      mostrar("sucesso", `Download de ${nomeArquivo} iniciado.`);
+
+      // bonus: sobe pelo endpoint de upload ja existente (Etapa 11)
+      // para gerar um link permanente, alem do arquivo baixado. Se
+      // falhar, o download acima ja aconteceu mesmo assim.
+      try {
+        const arquivo = new File([blob], nomeArquivo, { type: blob.type });
+        const url = await uploadArquivo(arquivo);
+        setLinkPersistente(url);
+      } catch {
+        // silencioso: o download direto e o que importa aqui
+      }
+    } catch (err) {
+      mostrar(
+        "erro",
+        err instanceof Error
+          ? err.message
+          : "Não foi possível exportar o encarte"
+      );
+    } finally {
+      setExportando(null);
+    }
   }
 
   function escolherSugestao(indice: number, sugestao: ResultadoMatch) {
@@ -324,17 +377,69 @@ export default function GenerateEncartePage() {
                       onSizeChange={setEscalas}
                     />
                   </Card>
-                  <EncartePreviewer
-                    produtos={itensParaPreview}
-                    temaId={`${temaFamilia}-${formato}`}
-                    formato={formato}
-                    lojas={LOJAS_PADRAO}
-                    validade={new Date().toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                    })}
-                    escalas={escalas}
-                  />
+                  <div ref={previewRef} className="inline-block w-full">
+                    <EncartePreviewer
+                      produtos={itensParaPreview}
+                      temaId={`${temaFamilia}-${formato}`}
+                      formato={formato}
+                      lojas={LOJAS_PADRAO}
+                      validade={new Date().toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                      escalas={escalas}
+                    />
+                  </div>
+
+                  <Card>
+                    <h2 className="mb-3 text-sm font-semibold">Download</h2>
+                    <Campo label="Resolução">
+                      <Select
+                        value={resolucaoIndex}
+                        onChange={(e) =>
+                          setResolucaoIndex(Number(e.target.value))
+                        }
+                      >
+                        {RESOLUCOES.map((r, i) => (
+                          <option key={r.rotulo} value={i}>
+                            {r.rotulo}
+                          </option>
+                        ))}
+                      </Select>
+                    </Campo>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        onClick={() => void baixar("png")}
+                        disabled={exportando !== null}
+                      >
+                        {exportando === "png"
+                          ? "Gerando..."
+                          : "Download como PNG"}
+                      </Button>
+                      <Button
+                        variante="secundario"
+                        onClick={() => void baixar("jpeg")}
+                        disabled={exportando !== null}
+                      >
+                        {exportando === "jpeg"
+                          ? "Gerando..."
+                          : "Download como JPG"}
+                      </Button>
+                    </div>
+                    {linkPersistente ? (
+                      <p className="mt-3 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                        Link permanente:{" "}
+                        <a
+                          href={linkPersistente}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-4"
+                        >
+                          {linkPersistente}
+                        </a>
+                      </p>
+                    ) : null}
+                  </Card>
                 </>
               ) : (
                 <Erro>

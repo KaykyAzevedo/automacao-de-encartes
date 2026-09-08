@@ -4,6 +4,14 @@ import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
 import { exemploCom } from "@/lib/temas/exemplo";
 import { TEMAS_PROMOCAO_DO_DIA } from "@/lib/temas/promocaoDoDia";
 
+// Sem isso, o Next trata a pagina como estatica (nao usa nenhuma API
+// dinamica) e guarda o RSC no cache do navegador - navegando ate aqui
+// por um <Link> em vez de um reload inteiro, dava pra ver uma versao
+// renderizada de antes de um ajuste no tema, mesmo com o codigo novo
+// ja publicado (o gerador de verdade, client-side, sempre mostrava
+// certo - so essa pagina de listagem ficava presa no cache).
+export const dynamic = "force-dynamic";
+
 export default function TemasPage() {
   return (
     <div className="mx-auto max-w-5xl">

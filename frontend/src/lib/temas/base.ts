@@ -4,24 +4,24 @@
 export const DEFS = `
   <defs>
     <linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fbf1cf"/>
-      <stop offset="28%" stop-color="#e3c073"/>
-      <stop offset="52%" stop-color="#a97c2c"/>
-      <stop offset="70%" stop-color="#f0dca0"/>
-      <stop offset="100%" stop-color="#8a6323"/>
+      <stop offset="0%" stop-color="#fff8df"/>
+      <stop offset="26%" stop-color="#ffd54a"/>
+      <stop offset="52%" stop-color="#e0a318"/>
+      <stop offset="72%" stop-color="#fff0ae"/>
+      <stop offset="100%" stop-color="#b8860f"/>
     </linearGradient>
 
     <linearGradient id="ouroLinha" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#8a6323" stop-opacity="0.2"/>
-      <stop offset="50%" stop-color="#e3c073"/>
-      <stop offset="100%" stop-color="#8a6323" stop-opacity="0.2"/>
+      <stop offset="0%" stop-color="#b8860f" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#ffd54a"/>
+      <stop offset="100%" stop-color="#b8860f" stop-opacity="0.25"/>
     </linearGradient>
 
     <linearGradient id="molduraCard" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f3dfa4"/>
-      <stop offset="35%" stop-color="#9b722a"/>
-      <stop offset="60%" stop-color="#e8cd8c"/>
-      <stop offset="100%" stop-color="#7d5a1f"/>
+      <stop offset="0%" stop-color="#fff2c2"/>
+      <stop offset="35%" stop-color="#d4990f"/>
+      <stop offset="60%" stop-color="#ffe27a"/>
+      <stop offset="100%" stop-color="#a3760a"/>
     </linearGradient>
 
     <linearGradient id="fundoCard" x1="0" y1="0" x2="0" y2="1">
@@ -63,10 +63,10 @@ export const DEFS = `
     </g>
 
     <g id="pino">
-      <circle cx="0" cy="0" r="21" fill="none" stroke="#c9a24a" stroke-width="2"/>
+      <circle cx="0" cy="0" r="21" fill="none" stroke="#ffd54a" stroke-width="2"/>
       <path d="M0,-11 C-6.2,-11 -11,-6.2 -11,0 C-11,7 0,13 0,13 C0,13 11,7 11,0 C11,-6.2 6.2,-11 0,-11 Z"
-            fill="none" stroke="#e3c073" stroke-width="2.2"/>
-      <circle cx="0" cy="-0.5" r="3.6" fill="#e3c073"/>
+            fill="none" stroke="#ffd54a" stroke-width="2.2"/>
+      <circle cx="0" cy="-0.5" r="3.6" fill="#ffd54a"/>
     </g>
 
     <g id="zap">
@@ -93,7 +93,7 @@ export const FUNDO = `
     <path d="M-20,215 C40,110 150,26 320,-12"/>
     <path d="M1100,215 C1040,110 930,26 760,-12"/>
   </g>
-  <g fill="none" stroke="#8a6323" stroke-width="2" opacity="0.55">
+  <g fill="none" stroke="#b8860f" stroke-width="2" opacity="0.55">
     <path d="M-20,243 C44,132 160,44 330,4"/>
     <path d="M1100,243 C1036,132 920,44 750,4"/>
   </g>
@@ -112,10 +112,10 @@ export function cabecalho(compacto: boolean): string {
     <text x="66" y="270">{{SELO_2}}</text>
     <text x="66" y="302">{{SELO_3}}</text>
   </g>
-  <line x1="66" y1="330" x2="104" y2="330" stroke="#c9a24a" stroke-width="2.5"/>
+  <line x1="66" y1="330" x2="104" y2="330" stroke="#ffd54a" stroke-width="2.5"/>
   <g fill="url(#ouro)"><use href="#folhas" transform="translate(128,182) scale(0.9) rotate(-18)"/></g>
 
-  <g transform="translate(972,262) rotate(-13)" class="mao" fill="#e3c073" font-size="40" text-anchor="middle">
+  <g transform="translate(972,262) rotate(-13)" class="mao" fill="#ffd54a" font-size="40" text-anchor="middle">
     <text y="-46">Qualidade</text>
     <text y="0">sempre</text>
     <text y="46">para você!</text>
@@ -124,8 +124,8 @@ export function cabecalho(compacto: boolean): string {
   <line x1="300" y1="248" x2="500" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
   <line x1="580" y1="248" x2="780" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
   <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,252) scale(0.8)"/></g>
-  <circle cx="516" cy="248" r="2.6" fill="#e3c073"/>
-  <circle cx="564" cy="248" r="2.6" fill="#e3c073"/>
+  <circle cx="516" cy="248" r="2.6" fill="#ffd54a"/>
+  <circle cx="564" cy="248" r="2.6" fill="#ffd54a"/>
 
   <text class="serifa" x="540" y="306" text-anchor="middle" font-size="38"
         letter-spacing="17" fill="url(#ouro)" font-weight="600">{{TITULO}}</text>
@@ -148,9 +148,9 @@ export function cabecalho(compacto: boolean): string {
     <text x="60" y="223">{{SELO_2}}</text>
     <text x="60" y="250">{{SELO_3}}</text>
   </g>
-  <line x1="60" y1="274" x2="92" y2="274" stroke="#c9a24a" stroke-width="2.2"/>
+  <line x1="60" y1="274" x2="92" y2="274" stroke="#ffd54a" stroke-width="2.2"/>
 
-  <g transform="translate(978,218) rotate(-13)" class="mao" fill="#e3c073" font-size="33" text-anchor="middle">
+  <g transform="translate(978,218) rotate(-13)" class="mao" fill="#ffd54a" font-size="33" text-anchor="middle">
     <text y="-38">Qualidade</text>
     <text y="0">sempre</text>
     <text y="38">para você!</text>
@@ -195,7 +195,7 @@ export const RODAPE = `
         fill="#e6e6e6">WHATSAPP: {{LOJA_2_WHATSAPP}}</text>
 
   <rect x="52" y="1276" width="976" height="50" rx="25"
-        fill="none" stroke="#8a6323" stroke-width="1.6"/>
+        fill="none" stroke="#b8860f" stroke-width="1.6"/>
   <g fill="url(#ouro)">
     <use href="#folhas" transform="translate(92,1301) scale(0.52)"/>
     <use href="#folhas" transform="translate(988,1301) scale(0.52)"/>

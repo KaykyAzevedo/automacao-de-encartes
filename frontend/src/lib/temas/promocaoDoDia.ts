@@ -28,20 +28,48 @@ function moldura({ x, y, w, h }: Caixa, raio = 26): string {
   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${raio}"
         fill="url(#fundoCard)" stroke="url(#molduraCard)" stroke-width="3.2"/>
   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${raio}"
-        fill="none" stroke="#e3c073" stroke-width="1" opacity="0.32"
+        fill="none" stroke="#ffd54a" stroke-width="1" opacity="0.32"
         filter="url(#brilhoOuro)"/>`;
 }
 
-function foto(n: number, caixa: Caixa, escala: number): string {
+// As fotos do banco sao quadradas (1080x1080), mas a caixa de cada
+// grade quase nunca e quadrada - "slice" (cobrir cortando o excesso)
+// da um zoom enorme numa caixa larga/baixa e corta o produto quase
+// inteiro. "meet" (mostrar tudo, sobra vazio) e o certo aqui; o
+// clipPath so evita que a foto vaze pra fora da propria caixa quando
+// o slider aumenta a escala.
+//
+// `recortar=false` tira essa trava (usado so no destaque de 1 item):
+// como as fotos ja sao PNG sem fundo, deixar a fruta "vazar" um pouco
+// pra fora da propria caixa (e ate por cima da borda do card) da um
+// efeito de destaque saltando da tela, sem mostrar nenhum retangulo -
+// so a silhueta da fruta mesmo cruzando a borda.
+function foto(
+  n: number,
+  caixa: Caixa,
+  escala: number,
+  recortar = true
+): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
   const cy = y + h / 2;
-  return `
+  const imagem = `<image href="{{ITEM_${n}_FOTO}}" x="${x}" y="${y}" width="${w}" height="${h}"
+             preserveAspectRatio="xMidYMid meet"/>`;
+
+  if (!recortar) {
+    return `
   <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"
-          fill="#101010" stroke="#3a3021" stroke-width="1.4" stroke-dasharray="7 7"/>
-    <image href="{{ITEM_${n}_FOTO}}" x="${x}" y="${y}" width="${w}" height="${h}"
-           preserveAspectRatio="xMidYMid meet"/>
+    ${imagem}
+  </g>`;
+  }
+
+  const clipId = `fotoClip${n}`;
+  return `
+  <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/></clipPath>
+  <g clip-path="url(#${clipId})">
+    <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
+      ${imagem}
+    </g>
   </g>`;
 }
 
@@ -96,17 +124,52 @@ type ResultadoGrade = { svg: string; slots: SlotNome[] };
 type FuncaoGrade = (escalas: EscalasTema) => ResultadoGrade;
 
 // ---------- 1 destaque ----------
+// Foto grande em cima (empilhado), nome e preco embaixo. O card comeca
+// mais baixo que o cabecalho (com uma folga entre o titulo "DO DIA" e
+// a borda do card) justamente pra foto poder vazar pra cima da borda
+// SEM passar por cima do titulo - ela salta na folga, nao no texto.
 function grade1(escalas: EscalasTema): ResultadoGrade {
-  const card: Caixa = { x: 52, y: 430, w: 976, h: 650 };
+  const card: Caixa = { x: 52, y: 470, w: 976, h: 526 };
+  const fotoLado = 620;
+  const fotoX = card.x + (card.w - fotoLado) / 2;
+  // As fotos do banco tem uma margem interna grande (a fruta ocupa uns
+  // 55-80% da altura do PNG, nao o quadrado inteiro) - so subir a
+  // caixa um pouco nao bastava pra fruta cruzar a borda de verdade;
+  // subimos o suficiente pra compensar essa margem tipica.
+  const fotoY = card.y - 210;
+  const fotoVisivelBaixo = fotoY + fotoLado * 0.81;
+  const cx = card.x + card.w / 2;
+  const nomeBaseline = fotoVisivelBaixo + 68;
+  const precoCaixa: Caixa = {
+    x: card.x + (card.w - 560) / 2,
+    y: nomeBaseline + 38,
+    w: 560,
+    h: 88,
+  };
+
   const svg = [
     moldura(card, 30),
-    foto(1, { x: 88, y: 458, w: 904, h: 412 }, escalas.foto),
-    nome(1, 540, 962, 68, 88, 992, true, escalas.nome),
-    preco(1, { x: 200, y: 985, w: 680, h: 92 }, 88, escalas.preco),
+    foto(
+      1,
+      { x: fotoX, y: fotoY, w: fotoLado, h: fotoLado },
+      escalas.foto,
+      false
+    ),
+    nome(
+      1,
+      cx,
+      nomeBaseline,
+      56,
+      card.x + 80,
+      card.x + card.w - 80,
+      true,
+      escalas.nome
+    ),
+    preco(1, precoCaixa, 60, escalas.preco),
   ].join("");
   return {
     svg,
-    slots: [{ x: 540, tamanho: 68, larguraMax: 700, espacamento: 2.5 }],
+    slots: [{ x: cx, tamanho: 56, larguraMax: 800, espacamento: 2.5 }],
   };
 }
 
@@ -133,24 +196,27 @@ function grade2(escalas: EscalasTema): ResultadoGrade {
 }
 
 // ---------- 4 itens: 2 x 2, foto em cima ----------
+// Foto mais alta (340x230, era 420x178 - bem mais larga que alta) pra
+// aproximar do quadrado das fotos do banco, sem cortar (meet): sobra
+// so uma folga pequena nas laterais em vez de achatar a foto toda.
 function grade4(escalas: EscalasTema): ResultadoGrade {
   const partes: string[] = [];
   const slots: SlotNome[] = [];
   const colunas = [52, 560];
-  const linhas = [382, 754];
+  const linhas = [380, 760];
 
   linhas.forEach((y, li) => {
     colunas.forEach((x, ci) => {
       const n = li * 2 + ci + 1;
-      const card: Caixa = { x, y, w: 468, h: 348 };
+      const card: Caixa = { x, y, w: 468, h: 360 };
       const cx = x + 234;
       partes.push(
         moldura(card),
-        foto(n, { x: x + 24, y: y + 20, w: 420, h: 178 }, escalas.foto),
-        nome(n, cx, y + 244, 34, x + 30, x + 438, false, escalas.nome),
-        preco(n, { x: x + 24, y: y + 262, w: 420, h: 68 }, 50, escalas.preco)
+        foto(n, { x: x + 64, y: y + 12, w: 340, h: 230 }, escalas.foto),
+        nome(n, cx, y + 280, 30, x + 30, x + 438, false, escalas.nome),
+        preco(n, { x: x + 54, y: y + 296, w: 360, h: 56 }, 40, escalas.preco)
       );
-      slots.push({ x: cx, tamanho: 34, larguraMax: 330, espacamento: 2.5 });
+      slots.push({ x: cx, tamanho: 30, larguraMax: 340, espacamento: 2.5 });
     });
   });
 
@@ -189,6 +255,9 @@ function grade6(escalas: EscalasTema): ResultadoGrade {
 }
 
 // ---------- 8 itens: 2 x 4, foto alternando de lado ----------
+// Hierarquia do encarte: foto e preco em evidencia, nome e o menos
+// importante. Foto cresceu (148->160) e o preco tambem (48->52); o
+// nome encolheu (23->19) pra abrir espaco pros dois.
 function grade8(escalas: EscalasTema): ResultadoGrade {
   const partes: string[] = [];
   const slots: SlotNome[] = [];
@@ -202,17 +271,17 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
       // coluna da esquerda com a foto a esquerda, direita espelhada,
       // como no encarte original
       const fotoEsquerda = ci === 0;
-      const fotoX = fotoEsquerda ? x + 14 : x + 306;
-      const textoX = fotoEsquerda ? x + 164 : x + 14;
-      const cx = textoX + 145;
+      const fotoX = fotoEsquerda ? x + 10 : x + 298;
+      const textoX = fotoEsquerda ? x + 176 : x + 14;
+      const cx = textoX + 139;
 
       partes.push(
         moldura(card, 18),
-        foto(n, { x: fotoX, y: y + 12, w: 148, h: 148 }, escalas.foto),
-        nome(n, cx, y + 58, 23, textoX, textoX + 290, false, escalas.nome),
-        preco(n, { x: textoX, y: y + 74, w: 290, h: 84 }, 48, escalas.preco)
+        foto(n, { x: fotoX, y: y + 6, w: 160, h: 160 }, escalas.foto),
+        nome(n, cx, y + 56, 19, textoX, textoX + 278, false, escalas.nome),
+        preco(n, { x: textoX, y: y + 74, w: 278, h: 86 }, 52, escalas.preco)
       );
-      slots.push({ x: cx, tamanho: 23, larguraMax: 250, espacamento: 1.8 });
+      slots.push({ x: cx, tamanho: 19, larguraMax: 240, espacamento: 1.6 });
     });
   });
 
@@ -220,6 +289,9 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
 }
 
 // ---------- 10 itens: 2 x 5, bem comprimido ----------
+// Mesma logica de hierarquia do grade8: foto maior (118->132), preco
+// maior (40->43), nome menor (20->17) - sem mudar a altura do card
+// (nao ha espaco vertical sobrando com 5 linhas nesse formato).
 function grade10(escalas: EscalasTema): ResultadoGrade {
   const partes: string[] = [];
   const slots: SlotNome[] = [];
@@ -233,17 +305,17 @@ function grade10(escalas: EscalasTema): ResultadoGrade {
       // mesmo padrao do grade8 (foto alternando de lado), so mais
       // compacto para caber a quinta linha antes do rodape
       const fotoEsquerda = ci === 0;
-      const fotoX = fotoEsquerda ? x + 10 : x + 340;
-      const textoX = fotoEsquerda ? x + 138 : x + 10;
-      const cx = textoX + 160;
+      const fotoX = fotoEsquerda ? x + 6 : x + 330;
+      const textoX = fotoEsquerda ? x + 152 : x + 8;
+      const cx = textoX + 149;
 
       partes.push(
         moldura(card, 16),
-        foto(n, { x: fotoX, y: y + 10, w: 118, h: 118 }, escalas.foto),
-        nome(n, cx, y + 50, 20, textoX, textoX + 320, false, escalas.nome),
-        preco(n, { x: textoX, y: y + 64, w: 320, h: 64 }, 40, escalas.preco)
+        foto(n, { x: fotoX, y: y + 3, w: 132, h: 132 }, escalas.foto),
+        nome(n, cx, y + 48, 17, textoX, textoX + 298, false, escalas.nome),
+        preco(n, { x: textoX, y: y + 62, w: 298, h: 66 }, 43, escalas.preco)
       );
-      slots.push({ x: cx, tamanho: 20, larguraMax: 280, espacamento: 1.6 });
+      slots.push({ x: cx, tamanho: 17, larguraMax: 260, espacamento: 1.4 });
     });
   });
 
@@ -279,7 +351,7 @@ export function construirTemasPromocaoDoDia(
       "promocao-do-dia-1",
       "Promoção do Dia · 1 destaque",
       1,
-      false,
+      true,
       grade1,
       escalas
     ),
