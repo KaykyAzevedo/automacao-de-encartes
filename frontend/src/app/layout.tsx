@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { classesDeFonte } from "@/lib/fontes";
 
 import "./globals.css";
 
@@ -15,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={classesDeFonte}>
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>

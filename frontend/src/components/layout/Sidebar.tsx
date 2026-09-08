@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/dashboard", rotulo: "Dashboard" },
   { href: "/preparation", rotulo: "Preparação" },
+  { href: "/temas", rotulo: "Temas" },
 ];
 
 export function Sidebar() {
