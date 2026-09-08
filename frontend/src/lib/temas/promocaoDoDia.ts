@@ -99,20 +99,27 @@ function nome(
 
 // Preco em dourado brilhante preenchendo bem a caixa (pedido do
 // usuario) em vez do numero creme/branco, discreto, de antes.
+//
+// Centralizacao vertical via dominant-baseline="central" (usa a
+// metrica real da fonte) em vez de um deslocamento manual a partir da
+// baseline. Mesmo assim a fonte ".peso" sobra ~6% do corpo pra baixo
+// do centro real (medido pixel a pixel) - o ajusteFino compensa isso
+// pros numeros ficarem simetricos de verdade, pra cima e pra baixo.
 function preco(n: number, caixa: Caixa, corpo: number, escala: number): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
   const cy = y + h / 2;
   const meio = y + h / 2;
+  const ajusteFino = corpo * 0.06;
   return `
   <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
           fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>
-    <text class="peso" x="${x + w * 0.09}" y="${meio + corpo * 0.2}" font-size="${(corpo * 0.55).toFixed(0)}"
-          fill="url(#ouro)">R$</text>
-    <text class="peso" x="${x + w * 0.53}" y="${meio + corpo * 0.32}" text-anchor="middle"
+    <text class="peso" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
+          font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
+    <text class="peso" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
           font-size="${corpo}" fill="url(#ouro)" filter="url(#brilhoSuave)">{{ITEM_${n}_PRECO}}</text>
-    <text class="peso" x="${x + w - w * 0.06}" y="${meio + corpo * 0.14}" text-anchor="end"
+    <text class="peso" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
           font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
   </g>`;
 }
