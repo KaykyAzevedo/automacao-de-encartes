@@ -31,5 +31,5 @@ export interface Theme {
   updatedAt: string;
 }
 
-export type FormatoEncarte = 1 | 4 | 8 | 10;
+export type FormatoEncarte = 1 | 2 | 4 | 6 | 8 | 10;
 export type TamanhoSaida = "feed" | "stories";

@@ -51,6 +51,18 @@ const CATALOGO: ItemEncarte[] = [
     unidade: "KG",
     fotoUrl: "/banco-fotos/mamao-papaia.png",
   },
+  {
+    nome: "BATATA DOCE",
+    preco: "4,98",
+    unidade: "KG",
+    fotoUrl: "/banco-fotos/batata-doce.png",
+  },
+  {
+    nome: "MANGA PALMER",
+    preco: "5,98",
+    unidade: "KG",
+    fotoUrl: "/banco-fotos/manga-palmer.png",
+  },
 ];
 
 const BASE = {

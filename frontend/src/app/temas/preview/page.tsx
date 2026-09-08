@@ -1,9 +1,9 @@
+import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
 import { exemploCom } from "@/lib/temas/exemplo";
 import { TEMAS_PROMOCAO_DO_DIA } from "@/lib/temas/promocaoDoDia";
-import { renderizarTema } from "@/lib/temas/render";
 
 // Visualizacao isolada, sem header nem sidebar, para conferir o
-// encarte no tamanho real. ?formato=1|2|4|6|8
+// encarte no tamanho real. ?formato=1|2|4|6|8|10
 export default async function PreviewPage({
   searchParams,
 }: {
@@ -13,13 +13,13 @@ export default async function PreviewPage({
   const tema =
     TEMAS_PROMOCAO_DO_DIA.find((t) => String(t.formato) === formato) ??
     TEMAS_PROMOCAO_DO_DIA[1];
+  const { itens, ...dados } = exemploCom(tema.formato);
 
   return (
-    <div
-      className="[&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
-      dangerouslySetInnerHTML={{
-        __html: renderizarTema(tema, exemploCom(tema.formato)),
-      }}
+    <EncartePreviewer
+      produtos={itens}
+      formato={tema.formato as 1 | 2 | 4 | 6 | 8 | 10}
+      {...dados}
     />
   );
 }

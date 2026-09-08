@@ -186,6 +186,37 @@ function grade8(): { svg: string; slots: SlotNome[] } {
   return { svg: partes.join(""), slots };
 }
 
+// ---------- 10 itens: 2 x 5, bem comprimido ----------
+function grade10(): { svg: string; slots: SlotNome[] } {
+  const partes: string[] = [];
+  const slots: SlotNome[] = [];
+  const colunas = [52, 560];
+  const linhas = [372, 518, 664, 810, 956];
+
+  linhas.forEach((y, li) => {
+    colunas.forEach((x, ci) => {
+      const n = li * 2 + ci + 1;
+      const card: Caixa = { x, y, w: 468, h: 138 };
+      // mesmo padrao do grade8 (foto alternando de lado), so mais
+      // compacto para caber a quinta linha antes do rodape
+      const fotoEsquerda = ci === 0;
+      const fotoX = fotoEsquerda ? x + 10 : x + 340;
+      const textoX = fotoEsquerda ? x + 138 : x + 10;
+      const cx = textoX + 160;
+
+      partes.push(
+        moldura(card, 16),
+        foto(n, { x: fotoX, y: y + 10, w: 118, h: 118 }),
+        nome(n, cx, y + 50, 20, textoX, textoX + 320, false),
+        preco(n, { x: textoX, y: y + 64, w: 320, h: 64 }, 40)
+      );
+      slots.push({ x: cx, tamanho: 20, larguraMax: 280, espacamento: 1.6 });
+    });
+  });
+
+  return { svg: partes.join(""), slots };
+}
+
 function montar(
   id: string,
   rotulo: string,
@@ -242,10 +273,19 @@ export const PROMOCAO_DO_DIA_8 = montar(
   grade8()
 );
 
+export const PROMOCAO_DO_DIA_10 = montar(
+  "promocao-do-dia-10",
+  "Promoção do Dia · 10 itens",
+  10,
+  true,
+  grade10()
+);
+
 export const TEMAS_PROMOCAO_DO_DIA = [
   PROMOCAO_DO_DIA_1,
   PROMOCAO_DO_DIA_2,
   PROMOCAO_DO_DIA_4,
   PROMOCAO_DO_DIA_6,
   PROMOCAO_DO_DIA_8,
+  PROMOCAO_DO_DIA_10,
 ];
