@@ -74,7 +74,8 @@ function foto(
 }
 
 // Linhas curtas nas bordas em vez de ornamentos colados ao texto:
-// em posicao fixa eles colidem com nomes curtos.
+// em posicao fixa eles colidem com nomes curtos. (A folhinha dourada
+// que ficava em cima do nome foi removida a pedido do usuario.)
 function nome(
   n: number,
   cx: number,
@@ -82,17 +83,11 @@ function nome(
   tamanho: number,
   bordaEsq: number,
   bordaDir: number,
-  comFolha: boolean,
   escala: number
 ): string {
   const compLinha = Math.min(80, (bordaDir - bordaEsq) * 0.16);
   return `
   <g transform="translate(${cx},${baseline}) scale(${escala.toFixed(3)}) translate(${-cx},${-baseline})">
-    ${
-      comFolha
-        ? `<g fill="url(#ouro)"><use href="#folhas" transform="translate(${cx},${(baseline - tamanho * 1.05).toFixed(0)}) scale(${(0.5 + tamanho / 200).toFixed(2)})"/></g>`
-        : ""
-    }
     <line x1="${bordaEsq}" y1="${baseline - 16}" x2="${bordaEsq + compLinha}" y2="${baseline - 16}"
           stroke="url(#ouroLinha)" stroke-width="1.3"/>
     <line x1="${bordaDir - compLinha}" y1="${baseline - 16}" x2="${bordaDir}" y2="${baseline - 16}"
@@ -102,6 +97,8 @@ function nome(
   </g>`;
 }
 
+// Preco em dourado brilhante preenchendo bem a caixa (pedido do
+// usuario) em vez do numero creme/branco, discreto, de antes.
 function preco(n: number, caixa: Caixa, corpo: number, escala: number): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
@@ -114,9 +111,9 @@ function preco(n: number, caixa: Caixa, corpo: number, escala: number): string {
     <text class="peso" x="${x + w * 0.09}" y="${meio + corpo * 0.2}" font-size="${(corpo * 0.55).toFixed(0)}"
           fill="url(#ouro)">R$</text>
     <text class="peso" x="${x + w * 0.53}" y="${meio + corpo * 0.32}" text-anchor="middle"
-          font-size="${corpo}" fill="#f7ead0">{{ITEM_${n}_PRECO}}</text>
+          font-size="${corpo}" fill="url(#ouro)" filter="url(#brilhoSuave)">{{ITEM_${n}_PRECO}}</text>
     <text class="peso" x="${x + w - w * 0.06}" y="${meio + corpo * 0.14}" text-anchor="end"
-          font-size="${(corpo * 0.46).toFixed(0)}" fill="#f7ead0">{{ITEM_${n}_UNIDADE}}</text>
+          font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
   </g>`;
 }
 
@@ -162,10 +159,9 @@ function grade1(escalas: EscalasTema): ResultadoGrade {
       56,
       card.x + 80,
       card.x + card.w - 80,
-      true,
       escalas.nome
     ),
-    preco(1, precoCaixa, 60, escalas.preco),
+    preco(1, precoCaixa, 70, escalas.preco),
   ].join("");
   return {
     svg,
@@ -186,8 +182,8 @@ function grade2(escalas: EscalasTema): ResultadoGrade {
     partes.push(
       moldura(card, 30),
       foto(n, { x: x + 28, y: 478, w: 412, h: 352 }, escalas.foto),
-      nome(n, cx, 896, 44, x + 36, x + 432, true, escalas.nome),
-      preco(n, { x: x + 28, y: 928, w: 412, h: 128 }, 92, escalas.preco)
+      nome(n, cx, 896, 44, x + 36, x + 432, escalas.nome),
+      preco(n, { x: x + 28, y: 928, w: 412, h: 128 }, 102, escalas.preco)
     );
     slots.push({ x: cx, tamanho: 44, larguraMax: 330, espacamento: 2.5 });
   });
@@ -213,8 +209,8 @@ function grade4(escalas: EscalasTema): ResultadoGrade {
       partes.push(
         moldura(card),
         foto(n, { x: x + 64, y: y + 12, w: 340, h: 230 }, escalas.foto),
-        nome(n, cx, y + 280, 30, x + 30, x + 438, false, escalas.nome),
-        preco(n, { x: x + 54, y: y + 296, w: 360, h: 56 }, 40, escalas.preco)
+        nome(n, cx, y + 280, 30, x + 30, x + 438, escalas.nome),
+        preco(n, { x: x + 54, y: y + 296, w: 360, h: 56 }, 44, escalas.preco)
       );
       slots.push({ x: cx, tamanho: 30, larguraMax: 340, espacamento: 2.5 });
     });
@@ -239,11 +235,11 @@ function grade6(escalas: EscalasTema): ResultadoGrade {
       partes.push(
         moldura(card, 20),
         foto(n, { x: x + 16, y: y + 16, w: 166, h: 194 }, escalas.foto),
-        nome(n, cx, y + 86, 26, textoX - 12, x + 452, false, escalas.nome),
+        nome(n, cx, y + 86, 26, textoX - 12, x + 452, escalas.nome),
         preco(
           n,
           { x: textoX - 12, y: y + 106, w: 264, h: 92 },
-          54,
+          69,
           escalas.preco
         )
       );
@@ -278,8 +274,8 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
       partes.push(
         moldura(card, 18),
         foto(n, { x: fotoX, y: y + 6, w: 160, h: 160 }, escalas.foto),
-        nome(n, cx, y + 56, 19, textoX, textoX + 278, false, escalas.nome),
-        preco(n, { x: textoX, y: y + 74, w: 278, h: 86 }, 52, escalas.preco)
+        nome(n, cx, y + 56, 19, textoX, textoX + 278, escalas.nome),
+        preco(n, { x: textoX, y: y + 74, w: 278, h: 86 }, 65, escalas.preco)
       );
       slots.push({ x: cx, tamanho: 19, larguraMax: 240, espacamento: 1.6 });
     });
@@ -312,8 +308,8 @@ function grade10(escalas: EscalasTema): ResultadoGrade {
       partes.push(
         moldura(card, 16),
         foto(n, { x: fotoX, y: y + 3, w: 132, h: 132 }, escalas.foto),
-        nome(n, cx, y + 48, 17, textoX, textoX + 298, false, escalas.nome),
-        preco(n, { x: textoX, y: y + 62, w: 298, h: 66 }, 43, escalas.preco)
+        nome(n, cx, y + 48, 17, textoX, textoX + 298, escalas.nome),
+        preco(n, { x: textoX, y: y + 62, w: 298, h: 66 }, 50, escalas.preco)
       );
       slots.push({ x: cx, tamanho: 17, larguraMax: 260, espacamento: 1.4 });
     });
