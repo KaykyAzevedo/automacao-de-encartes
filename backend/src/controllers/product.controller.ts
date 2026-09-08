@@ -8,6 +8,8 @@ import {
   productIdSchema,
   searchProductsQuerySchema,
 } from "../schemas/product.schema";
+import { matchProductSchema } from "../schemas/productMatch.schema";
+import { productMatchService } from "../services/productMatchService";
 import { productService } from "../services/product.service";
 
 function usuarioDe(req: Request) {
@@ -48,6 +50,22 @@ export const productController = {
           companyId,
           query,
           limit
+        )
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async match(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usuario = usuarioDe(req);
+      const { companyId, productName } = matchProductSchema.parse(req.body);
+      res.json(
+        await productMatchService.findProductByName(
+          usuario.id,
+          companyId,
+          productName
         )
       );
     } catch (e) {

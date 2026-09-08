@@ -10,9 +10,10 @@ productRoutes.use(requireAuth);
 productRoutes.post("/", productController.criar);
 productRoutes.get("/", productController.listar);
 
-// precisa vir antes de qualquer rota com /:id, senao "search"
-// seria capturado como um id
+// precisam vir antes de qualquer rota com /:id, senao seriam
+// capturadas como um id
 productRoutes.get("/search", productController.buscar);
+productRoutes.post("/match", productController.match);
 
 productRoutes.put("/:id", productController.atualizar);
 productRoutes.delete("/:id", productController.remover);
