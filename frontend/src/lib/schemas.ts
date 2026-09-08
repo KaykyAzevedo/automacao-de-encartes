@@ -39,6 +39,12 @@ export const lojaSchema = z.object({
     )
     .or(z.literal(""))
     .nullish(),
+  logo: z
+    .string()
+    .trim()
+    .url("Informe uma URL válida (https://...)")
+    .or(z.literal(""))
+    .nullish(),
 });
 
 // Converte o erro do Zod em { campo: mensagem }, do jeito que os

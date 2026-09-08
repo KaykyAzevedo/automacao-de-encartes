@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Erro, SecaoVazia } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LogoPreview } from "@/components/ui/LogoPreview";
 import { SkeletonLista } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useRemoverLoja, useStores } from "@/hooks/useStores";
@@ -53,16 +54,19 @@ export function ListStores({
             className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{loja.name}</p>
-                <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                  {loja.address}
-                </p>
-                {loja.deliveryPhone ? (
-                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    WhatsApp: {loja.deliveryPhone}
+              <div className="flex min-w-0 gap-3">
+                {loja.logo ? <LogoPreview url={loja.logo} /> : null}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{loja.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                    {loja.address}
                   </p>
-                ) : null}
+                  {loja.deliveryPhone ? (
+                    <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      WhatsApp: {loja.deliveryPhone}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               <div className="flex shrink-0 gap-1">

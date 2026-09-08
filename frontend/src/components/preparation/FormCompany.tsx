@@ -33,6 +33,17 @@ export function FormCompany({
   const atualizar = useAtualizarEmpresa();
   const salvando = criar.isPending || atualizar.isPending;
 
+  // o erro de um campo some assim que ele e corrigido, em vez de
+  // esperar o proximo envio
+  function limpaErro(campo: string) {
+    setErros((atual) => {
+      if (!atual[campo]) return atual;
+      const copia = { ...atual };
+      delete copia[campo];
+      return copia;
+    });
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErroGeral(null);
@@ -82,7 +93,10 @@ export function FormCompany({
       <Campo label="Nome da empresa" erro={erros.name}>
         <Input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            limpaErro("name");
+          }}
           placeholder="Empório Hortifruti"
           disabled={salvando}
           autoFocus
@@ -92,7 +106,10 @@ export function FormCompany({
       <Campo label="Estilo dos encartes" erro={erros.style}>
         <Select
           value={style}
-          onChange={(e) => setStyle(e.target.value as EstiloEmpresa)}
+          onChange={(e) => {
+            setStyle(e.target.value as EstiloEmpresa);
+            limpaErro("style");
+          }}
           disabled={salvando}
         >
           <option value="sofisticado">Sofisticado (preto e dourado)</option>
@@ -103,7 +120,10 @@ export function FormCompany({
       <Campo label="URL do logo (opcional)" erro={erros.logo}>
         <Input
           value={logo}
-          onChange={(e) => setLogo(e.target.value)}
+          onChange={(e) => {
+            setLogo(e.target.value);
+            limpaErro("logo");
+          }}
           placeholder="https://..."
           disabled={salvando}
         />
