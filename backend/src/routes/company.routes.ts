@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { companyController } from "../controllers/company.controller";
 import { storeController } from "../controllers/store.controller";
+import { themeController } from "../controllers/theme.controller";
 import { requireAuth } from "../middlewares/requireAuth";
 
 export const companyRoutes = Router();
@@ -15,5 +16,6 @@ companyRoutes.get("/:id", companyController.buscar);
 companyRoutes.put("/:id", companyController.atualizar);
 companyRoutes.delete("/:id", companyController.remover);
 
-// lojas de uma empresa
+// lojas e temas de uma empresa
 companyRoutes.get("/:companyId/stores", storeController.listarPorEmpresa);
+companyRoutes.get("/:companyId/themes", themeController.listarPorEmpresa);

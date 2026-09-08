@@ -35,6 +35,19 @@ export function errorHandler(
     return res.status(err.status).json({ error: err.message });
   }
 
+  // body-parser lanca um erro proprio (nao AppError) quando o corpo
+  // nao e JSON valido, com status/statusCode=400 anexado ao objeto.
+  // Sem este bloco, um JSON malformado do cliente virava 500 generico.
+  if (
+    err instanceof Error &&
+    "type" in err &&
+    err.type === "entity.parse.failed"
+  ) {
+    return res
+      .status(400)
+      .json({ error: "JSON inválido no corpo da requisição" });
+  }
+
   console.error(err);
   return res.status(500).json({ error: "Erro interno do servidor" });
 }
