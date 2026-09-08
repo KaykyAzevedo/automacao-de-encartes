@@ -1,7 +1,7 @@
-// Tema "Promoção do Dia" - formato de 2 itens, 1080x1350 (feed).
-// Os marcadores {{CHAVE}} sao trocados pelo render.
-export const PROMOCAO_DO_DIA_2 = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">
+// Partes compartilhadas por todos os formatos do tema "Promoção do Dia".
+// Cada formato monta seu SVG a partir daqui e desenha so a grade de itens.
+
+export const DEFS = `
   <defs>
     <linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fbf1cf"/>
@@ -38,18 +38,12 @@ export const PROMOCAO_DO_DIA_2 = `
 
     <filter id="brilhoOuro" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="7" result="desfoque"/>
-      <feMerge>
-        <feMergeNode in="desfoque"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="desfoque"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
     <filter id="brilhoSuave" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="3" result="desfoque"/>
-      <feMerge>
-        <feMergeNode in="desfoque"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="desfoque"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
     <filter id="texturaFundo">
@@ -89,7 +83,9 @@ export const PROMOCAO_DO_DIA_2 = `
     .sans   { font-family: var(--fonte-sans), sans-serif; }
     .mao    { font-family: var(--fonte-mao), cursive; }
   </style>
+`;
 
+export const FUNDO = `
   <rect width="1080" height="1350" fill="url(#fundo)"/>
   <rect width="1080" height="1350" filter="url(#texturaFundo)" opacity="0.5"/>
 
@@ -101,10 +97,14 @@ export const PROMOCAO_DO_DIA_2 = `
     <path d="M-20,243 C44,132 160,44 330,4"/>
     <path d="M1100,243 C1036,132 920,44 750,4"/>
   </g>
+`;
 
-  <g fill="url(#ouro)">
-    <use href="#folhas" transform="translate(540,52) scale(0.72)"/>
-  </g>
+// Duas alturas de cabecalho: a versao alta sobra espaco quando ha 1 ou 2
+// itens; a compacta libera altura para as grades de 4, 6 e 8.
+export function cabecalho(compacto: boolean): string {
+  if (!compacto) {
+    return `
+  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,52) scale(0.72)"/></g>
   <text class="script" x="540" y="152" text-anchor="middle" font-size="96" fill="#ffffff">Empório</text>
   <g stroke="#ffffff" stroke-width="1.6" opacity="0.85">
     <line x1="404" y1="181" x2="452" y2="181"/>
@@ -127,13 +127,12 @@ export const PROMOCAO_DO_DIA_2 = `
     <text y="46">para você!</text>
   </g>
 
-  <g>
-    <line x1="300" y1="248" x2="500" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
-    <line x1="580" y1="248" x2="780" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
-    <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,252) scale(0.8)"/></g>
-    <circle cx="516" cy="248" r="2.6" fill="#e3c073"/>
-    <circle cx="564" cy="248" r="2.6" fill="#e3c073"/>
-  </g>
+  <line x1="300" y1="248" x2="500" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
+  <line x1="580" y1="248" x2="780" y2="248" stroke="url(#ouroLinha)" stroke-width="1.6"/>
+  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,252) scale(0.8)"/></g>
+  <circle cx="516" cy="248" r="2.6" fill="#e3c073"/>
+  <circle cx="564" cy="248" r="2.6" fill="#e3c073"/>
+
   <text class="serifa" x="540" y="306" text-anchor="middle" font-size="38"
         letter-spacing="17" fill="url(#ouro)" font-weight="600">{{TITULO}}</text>
   <text class="serifa" x="540" y="410" text-anchor="middle" font-size="104"
@@ -142,63 +141,50 @@ export const PROMOCAO_DO_DIA_2 = `
   <g fill="#fbf1cf" opacity="0.9">
     <use href="#estrela" transform="translate(322,352) scale(0.85)"/>
     <use href="#estrela" transform="translate(762,368) scale(0.7)"/>
-    <use href="#estrela" transform="translate(596,432) scale(0.55)"/>
+  </g>
+`;
+  }
+
+  return `
+  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,38) scale(0.6)"/></g>
+  <text class="script" x="540" y="122" text-anchor="middle" font-size="76" fill="#ffffff">Empório</text>
+  <g stroke="#ffffff" stroke-width="1.4" opacity="0.85">
+    <line x1="424" y1="146" x2="462" y2="146"/>
+    <line x1="618" y1="146" x2="656" y2="146"/>
+  </g>
+  <text class="sans" x="540" y="152" text-anchor="middle" font-size="19"
+        letter-spacing="7.5" fill="#ffffff" font-weight="500">HORTIFRUTI</text>
+
+  <g class="sans" fill="#ececec" font-size="18" letter-spacing="4" font-weight="500">
+    <text x="60" y="196">{{SELO_1}}</text>
+    <text x="60" y="223">{{SELO_2}}</text>
+    <text x="60" y="250">{{SELO_3}}</text>
+  </g>
+  <line x1="60" y1="274" x2="92" y2="274" stroke="#c9a24a" stroke-width="2.2"/>
+
+  <g transform="translate(978,218) rotate(-13)" class="mao" fill="#e3c073" font-size="33" text-anchor="middle">
+    <text y="-38">Qualidade</text>
+    <text y="0">sempre</text>
+    <text y="38">para você!</text>
   </g>
 
-  <g>
-    <rect x="52" y="452" width="468" height="632" rx="30"
-          fill="url(#fundoCard)" stroke="url(#molduraCard)" stroke-width="3.5"/>
-    <rect x="52" y="452" width="468" height="632" rx="30"
-          fill="none" stroke="#e3c073" stroke-width="1" opacity="0.35"
-          filter="url(#brilhoOuro)"/>
+  <line x1="316" y1="204" x2="496" y2="204" stroke="url(#ouroLinha)" stroke-width="1.4"/>
+  <line x1="584" y1="204" x2="764" y2="204" stroke="url(#ouroLinha)" stroke-width="1.4"/>
+  <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,208) scale(0.68)"/></g>
 
-    <rect x="80" y="478" width="412" height="352" rx="14"
-          fill="#101010" stroke="#3a3021" stroke-width="1.5" stroke-dasharray="7 7"/>
-    <image href="{{ITEM_1_FOTO}}" x="80" y="478" width="412" height="352"
-           preserveAspectRatio="xMidYMid meet"/>
-
-    <g fill="url(#ouro)"><use href="#folhas" transform="translate(286,850) scale(0.58)"/></g>
-    <line x1="88" y1="880" x2="168" y2="880" stroke="url(#ouroLinha)" stroke-width="1.4"/>
-    <line x1="404" y1="880" x2="484" y2="880" stroke="url(#ouroLinha)" stroke-width="1.4"/>
-    <text class="serifa" x="286" y="896" text-anchor="middle" font-size="44"
-          letter-spacing="3" fill="url(#ouro)" font-weight="700">{{ITEM_1_NOME}}</text>
-
-    <rect x="80" y="928" width="412" height="130" rx="18"
-          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.5"/>
-    <text class="peso" x="112" y="1020" font-size="52" fill="url(#ouro)">R$</text>
-    <text class="peso" x="292" y="1030" text-anchor="middle" font-size="96"
-          fill="#f7ead0">{{ITEM_1_PRECO}}</text>
-    <text class="peso" x="462" y="1010" text-anchor="end" font-size="44"
-          fill="#f7ead0">{{ITEM_1_UNIDADE}}</text>
+  <text class="serifa" x="540" y="256" text-anchor="middle" font-size="30"
+        letter-spacing="13" fill="url(#ouro)" font-weight="600">{{TITULO}}</text>
+  <text class="serifa" x="540" y="336" text-anchor="middle" font-size="80"
+        letter-spacing="3" fill="url(#ouro)" font-weight="700"
+        filter="url(#brilhoSuave)">{{SUBTITULO}}</text>
+  <g fill="#fbf1cf" opacity="0.9">
+    <use href="#estrela" transform="translate(348,292) scale(0.7)"/>
+    <use href="#estrela" transform="translate(740,304) scale(0.58)"/>
   </g>
+`;
+}
 
-  <g>
-    <rect x="560" y="452" width="468" height="632" rx="30"
-          fill="url(#fundoCard)" stroke="url(#molduraCard)" stroke-width="3.5"/>
-    <rect x="560" y="452" width="468" height="632" rx="30"
-          fill="none" stroke="#e3c073" stroke-width="1" opacity="0.35"
-          filter="url(#brilhoOuro)"/>
-
-    <rect x="588" y="478" width="412" height="352" rx="14"
-          fill="#101010" stroke="#3a3021" stroke-width="1.5" stroke-dasharray="7 7"/>
-    <image href="{{ITEM_2_FOTO}}" x="588" y="478" width="412" height="352"
-           preserveAspectRatio="xMidYMid meet"/>
-
-    <g fill="url(#ouro)"><use href="#folhas" transform="translate(794,850) scale(0.58)"/></g>
-    <line x1="596" y1="880" x2="676" y2="880" stroke="url(#ouroLinha)" stroke-width="1.4"/>
-    <line x1="912" y1="880" x2="992" y2="880" stroke="url(#ouroLinha)" stroke-width="1.4"/>
-    <text class="serifa" x="794" y="896" text-anchor="middle" font-size="44"
-          letter-spacing="3" fill="url(#ouro)" font-weight="700">{{ITEM_2_NOME}}</text>
-
-    <rect x="588" y="928" width="412" height="130" rx="18"
-          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.5"/>
-    <text class="peso" x="620" y="1020" font-size="52" fill="url(#ouro)">R$</text>
-    <text class="peso" x="800" y="1030" text-anchor="middle" font-size="96"
-          fill="#f7ead0">{{ITEM_2_PRECO}}</text>
-    <text class="peso" x="970" y="1010" text-anchor="end" font-size="44"
-          fill="#f7ead0">{{ITEM_2_UNIDADE}}</text>
-  </g>
-
+export const RODAPE = `
   <g fill="url(#ouro)"><use href="#pino" transform="translate(132,1178)"/></g>
   <text class="serifa" x="176" y="1160" font-size="34" letter-spacing="2"
         fill="url(#ouro)" font-weight="700">{{LOJA_1_NOME}}</text>
@@ -228,5 +214,8 @@ export const PROMOCAO_DO_DIA_2 = `
   </g>
   <text class="sans" x="540" y="1308" text-anchor="middle" font-size="18"
         letter-spacing="3.2" fill="url(#ouro)" font-weight="500">PROMOÇÃO VÁLIDA {{VALIDADE}} OU ENQUANTO DURAR NOSSO ESTOQUE</text>
-</svg>
 `;
+
+export function documento(conteudo: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">${DEFS}${FUNDO}${conteudo}${RODAPE}</svg>`;
+}

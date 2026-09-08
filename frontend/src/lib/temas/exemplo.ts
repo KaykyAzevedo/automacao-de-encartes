@@ -1,15 +1,22 @@
-import type { DadosEncarte } from "./tipos";
+import type { DadosEncarte, ItemEncarte } from "./tipos";
 
-// Dados iguais aos do encarte de referencia, para comparar lado a lado.
-export const EXEMPLO_PROMOCAO_DO_DIA: DadosEncarte = {
+// Produtos reais dos encartes do Empório, incluindo nomes longos como
+// "ABÓBORA SERGIPANA", que servem para conferir a quebra em duas linhas.
+const CATALOGO: ItemEncarte[] = [
+  { nome: "LARANJA", preco: "3,98", unidade: "KG", fotoUrl: "" },
+  { nome: "CAJU", preco: "6,98", unidade: "BDJ", fotoUrl: "" },
+  { nome: "BRÓCOLIS USA", preco: "5,98", unidade: "UN", fotoUrl: "" },
+  { nome: "COUVE FLOR", preco: "6,98", unidade: "UN", fotoUrl: "" },
+  { nome: "UVA VITÓRIA", preco: "7,98", unidade: "BDJ", fotoUrl: "" },
+  { nome: "CENOURA", preco: "4,98", unidade: "BDJ", fotoUrl: "" },
+  { nome: "ABÓBORA SERGIPANA", preco: "3,98", unidade: "KG", fotoUrl: "" },
+  { nome: "OVO CARTELA C/20", preco: "11,98", unidade: "BDJ", fotoUrl: "" },
+];
+
+const BASE = {
   titulo: "PROMOÇÃO",
   subtitulo: "DO DIA",
-  chamada: "Qualidade sempre para você!",
   selo: ["FRUTAS", "FRESCAS", "TODO DIA"],
-  itens: [
-    { nome: "LARANJA", preco: "3,98", unidade: "KG", fotoUrl: "" },
-    { nome: "CAJU", preco: "6,98", unidade: "BDJ", fotoUrl: "" },
-  ],
   lojas: [
     {
       nome: "FREGUESIA",
@@ -24,3 +31,7 @@ export const EXEMPLO_PROMOCAO_DO_DIA: DadosEncarte = {
   ],
   validade: "08/09",
 };
+
+export function exemploCom(quantidade: number): DadosEncarte {
+  return { ...BASE, itens: CATALOGO.slice(0, quantidade) };
+}
