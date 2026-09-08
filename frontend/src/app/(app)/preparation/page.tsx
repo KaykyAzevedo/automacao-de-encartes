@@ -85,6 +85,11 @@ export default function PreparationPage() {
               selecionadaId={empresa?.id ?? null}
               onSelecionar={setEmpresa}
               onEditar={(e) => setFormEmpresa({ modo: "editar", empresa: e })}
+              onRemovida={(id) => {
+                // a coluna de lojas nao pode continuar apontando
+                // para uma empresa que deixou de existir
+                if (empresa?.id === id) setEmpresa(null);
+              }}
             />
           )}
         </Secao>

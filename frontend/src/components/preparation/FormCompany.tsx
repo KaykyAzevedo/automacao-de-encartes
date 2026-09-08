@@ -5,8 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Erro } from "@/components/ui/Card";
 import { Campo, Input, Select } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
 import { useAtualizarEmpresa, useCriarEmpresa } from "@/hooks/useCompanies";
 import { ApiError } from "@/lib/api";
+import { empresaSchema, errosPorCampo } from "@/lib/schemas";
 import type { Company, EstiloEmpresa } from "@/types";
 
 export function FormCompany({
@@ -17,81 +19,108 @@ export function FormCompany({
   onFechar: () => void;
 }) {
   const editando = Boolean(empresa);
+  const { mostrar } = useToast();
+
   const [name, setName] = useState(empresa?.name ?? "");
   const [style, setStyle] = useState<EstiloEmpresa>(
     empresa?.style ?? "sofisticado"
   );
   const [logo, setLogo] = useState(empresa?.logo ?? "");
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
 
   const criar = useCriarEmpresa();
   const atualizar = useAtualizarEmpresa();
-  const mutation = editando ? atualizar : criar;
-
-  const erro = mutation.error;
-  const mensagemErro =
-    erro instanceof ApiError
-      ? (erro.details?.map((d) => `${d.campo}: ${d.mensagem}`).join(" · ") ??
-        erro.message)
-      : erro
-        ? "Falha ao salvar"
-        : null;
+  const salvando = criar.isPending || atualizar.isPending;
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const dados = { name, style, logo: logo.trim() || null };
+    setErroGeral(null);
+
+    // valida no cliente antes de gastar uma requisicao
+    const analise = empresaSchema.safeParse({ name, style, logo });
+    if (!analise.success) {
+      setErros(errosPorCampo(analise.error));
+      return;
+    }
+    setErros({});
+
+    const dados = {
+      name: analise.data.name,
+      style: analise.data.style,
+      logo: analise.data.logo?.trim() ? analise.data.logo.trim() : null,
+    };
+
     try {
       if (editando && empresa) {
         await atualizar.mutateAsync({ id: empresa.id, ...dados });
+        mostrar("sucesso", `Empresa "${dados.name}" atualizada.`);
       } else {
         await criar.mutateAsync(dados);
+        mostrar("sucesso", `Empresa "${dados.name}" criada.`);
       }
       onFechar();
-    } catch {
-      // o erro ja fica em mutation.error e e exibido no formulario;
-      // sem o catch a promise rejeitada vazaria como unhandled rejection
+    } catch (err) {
+      // o backend e a fonte de verdade: se ele recusar, mostramos
+      // os erros dele por campo, mesmo tendo passado no cliente
+      if (err instanceof ApiError && err.details?.length) {
+        setErros(
+          Object.fromEntries(err.details.map((d) => [d.campo, d.mensagem]))
+        );
+        setErroGeral(err.message);
+      } else {
+        const msg =
+          err instanceof Error ? err.message : "Não foi possível salvar";
+        setErroGeral(msg);
+        mostrar("erro", msg);
+      }
     }
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-4">
-      <Campo label="Nome da empresa">
+    <form onSubmit={enviar} noValidate className="space-y-4">
+      <Campo label="Nome da empresa" erro={erros.name}>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Empório Hortifruti"
+          disabled={salvando}
           autoFocus
         />
       </Campo>
 
-      <Campo label="Estilo dos encartes">
+      <Campo label="Estilo dos encartes" erro={erros.style}>
         <Select
           value={style}
           onChange={(e) => setStyle(e.target.value as EstiloEmpresa)}
+          disabled={salvando}
         >
           <option value="sofisticado">Sofisticado (preto e dourado)</option>
           <option value="agressivo">Agressivo (amarelo e preto)</option>
         </Select>
       </Campo>
 
-      <Campo label="URL do logo (opcional)">
+      <Campo label="URL do logo (opcional)" erro={erros.logo}>
         <Input
           value={logo}
           onChange={(e) => setLogo(e.target.value)}
           placeholder="https://..."
+          disabled={salvando}
         />
       </Campo>
 
-      {mensagemErro ? <Erro>{mensagemErro}</Erro> : null}
+      {erroGeral ? <Erro>{erroGeral}</Erro> : null}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending
-            ? "Salvando..."
-            : editando
-              ? "Salvar"
-              : "Criar empresa"}
+        <Button type="submit" disabled={salvando}>
+          {salvando ? "Salvando..." : editando ? "Salvar" : "Criar empresa"}
         </Button>
-        <Button type="button" variante="secundario" onClick={onFechar}>
+        <Button
+          type="button"
+          variante="secundario"
+          onClick={onFechar}
+          disabled={salvando}
+        >
           Cancelar
         </Button>
       </div>

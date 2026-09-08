@@ -5,8 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Erro } from "@/components/ui/Card";
 import { Campo, Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
 import { useAtualizarLoja, useCriarLoja } from "@/hooks/useStores";
 import { ApiError } from "@/lib/api";
+import { errosPorCampo, lojaSchema } from "@/lib/schemas";
 import type { Store } from "@/types";
 
 export function FormStore({
@@ -19,80 +21,103 @@ export function FormStore({
   onFechar: () => void;
 }) {
   const editando = Boolean(loja);
+  const { mostrar } = useToast();
+
   const [name, setName] = useState(loja?.name ?? "");
   const [address, setAddress] = useState(loja?.address ?? "");
   const [deliveryPhone, setDeliveryPhone] = useState(loja?.deliveryPhone ?? "");
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
 
   const criar = useCriarLoja(companyId);
   const atualizar = useAtualizarLoja(companyId);
-  const mutation = editando ? atualizar : criar;
-
-  const erro = mutation.error;
-  const mensagemErro =
-    erro instanceof ApiError
-      ? (erro.details?.map((d) => `${d.campo}: ${d.mensagem}`).join(" · ") ??
-        erro.message)
-      : erro
-        ? "Falha ao salvar"
-        : null;
+  const salvando = criar.isPending || atualizar.isPending;
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
+    setErroGeral(null);
+
+    const analise = lojaSchema.safeParse({ name, address, deliveryPhone });
+    if (!analise.success) {
+      setErros(errosPorCampo(analise.error));
+      return;
+    }
+    setErros({});
+
     const dados = {
-      name,
-      address,
-      deliveryPhone: deliveryPhone.trim() || null,
+      name: analise.data.name,
+      address: analise.data.address,
+      deliveryPhone: analise.data.deliveryPhone?.trim()
+        ? analise.data.deliveryPhone.trim()
+        : null,
     };
+
     try {
       if (editando && loja) {
         await atualizar.mutateAsync({ id: loja.id, ...dados });
+        mostrar("sucesso", `Loja "${dados.name}" atualizada.`);
       } else {
         await criar.mutateAsync(dados);
+        mostrar("sucesso", `Loja "${dados.name}" criada.`);
       }
       onFechar();
-    } catch {
-      // idem FormCompany: o erro e exibido pelo mutation.error
+    } catch (err) {
+      if (err instanceof ApiError && err.details?.length) {
+        setErros(
+          Object.fromEntries(err.details.map((d) => [d.campo, d.mensagem]))
+        );
+        setErroGeral(err.message);
+      } else {
+        const msg =
+          err instanceof Error ? err.message : "Não foi possível salvar";
+        setErroGeral(msg);
+        mostrar("erro", msg);
+      }
     }
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-4">
-      <Campo label="Nome da loja">
+    <form onSubmit={enviar} noValidate className="space-y-4">
+      <Campo label="Nome da loja" erro={erros.name}>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Freguesia"
+          disabled={salvando}
           autoFocus
         />
       </Campo>
 
-      <Campo label="Endereço">
+      <Campo label="Endereço" erro={erros.address}>
         <Input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="Estrada do Bananal, 477"
+          disabled={salvando}
         />
       </Campo>
 
-      <Campo label="WhatsApp do delivery (opcional)">
+      <Campo label="WhatsApp do delivery (opcional)" erro={erros.deliveryPhone}>
         <Input
           value={deliveryPhone}
           onChange={(e) => setDeliveryPhone(e.target.value)}
           placeholder="(21) 97384-7640"
+          disabled={salvando}
         />
       </Campo>
 
-      {mensagemErro ? <Erro>{mensagemErro}</Erro> : null}
+      {erroGeral ? <Erro>{erroGeral}</Erro> : null}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending
-            ? "Salvando..."
-            : editando
-              ? "Salvar"
-              : "Criar loja"}
+        <Button type="submit" disabled={salvando}>
+          {salvando ? "Salvando..." : editando ? "Salvar" : "Criar loja"}
         </Button>
-        <Button type="button" variante="secundario" onClick={onFechar}>
+        <Button
+          type="button"
+          variante="secundario"
+          onClick={onFechar}
+          disabled={salvando}
+        >
           Cancelar
         </Button>
       </div>
