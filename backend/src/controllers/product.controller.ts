@@ -1,16 +1,18 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { naoAutenticado } from "../lib/errors";
+import { AppError, naoAutenticado } from "../lib/errors";
 import {
   atualizarProductSchema,
   criarProductSchema,
   listarProductsQuerySchema,
   productIdSchema,
   searchProductsQuerySchema,
+  uploadPhotoSchema,
 } from "../schemas/product.schema";
 import { matchProductSchema } from "../schemas/productMatch.schema";
 import { productMatchService } from "../services/productMatchService";
 import { productService } from "../services/product.service";
+import { storageService } from "../services/storage.service";
 
 function usuarioDe(req: Request) {
   if (!req.usuario) throw naoAutenticado();
@@ -90,6 +92,28 @@ export const productController = {
       const { id } = productIdSchema.parse(req.params);
       await productService.remover(usuario.id, id);
       res.json({ success: true });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async uploadFoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usuario = usuarioDe(req);
+      if (!req.file) {
+        throw new AppError(400, "Nenhum arquivo enviado (campo 'file')");
+      }
+      const { productId } = uploadPhotoSchema.parse(req.body);
+      const url = await storageService.salvar(
+        req.file.buffer,
+        req.file.mimetype
+      );
+      const produto = await productService.adicionarFotoUsuario(
+        usuario.id,
+        productId,
+        url
+      );
+      res.status(201).json(produto);
     } catch (e) {
       next(e);
     }

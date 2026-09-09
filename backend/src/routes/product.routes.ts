@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { productController } from "../controllers/product.controller";
 import { requireAuth } from "../middlewares/requireAuth";
+import { uploadMiddleware } from "../middlewares/upload";
 
 export const productRoutes = Router();
 
@@ -14,6 +15,11 @@ productRoutes.get("/", productController.listar);
 // capturadas como um id
 productRoutes.get("/search", productController.buscar);
 productRoutes.post("/match", productController.match);
+productRoutes.post(
+  "/upload-photo",
+  uploadMiddleware,
+  productController.uploadFoto
+);
 
 productRoutes.put("/:id", productController.atualizar);
 productRoutes.delete("/:id", productController.remover);

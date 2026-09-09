@@ -144,6 +144,24 @@ export default function PreparationPage() {
             Clique em &ldquo;Gerenciar&rdquo; para ver, criar ou editar.
           </SecaoVazia>
         </Secao>
+
+        <Secao
+          titulo="Produtos"
+          descricao="Fotos do banco e uploads seus"
+          acao={
+            <Link
+              href="/preparation/products"
+              className="text-xs font-medium underline underline-offset-4"
+            >
+              Gerenciar
+            </Link>
+          }
+        >
+          <SecaoVazia>
+            Cada produto pode ter fotos suas além da do banco público. Clique em
+            &ldquo;Gerenciar&rdquo; para enviar ou trocar.
+          </SecaoVazia>
+        </Secao>
       </div>
     </div>
   );

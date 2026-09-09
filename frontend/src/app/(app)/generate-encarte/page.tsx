@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
 import { SaveDraftModal } from "@/components/encarte/SaveDraftModal";
+import { SeletorDeFoto } from "@/components/encarte/SeletorDeFoto";
 import { SizeEditor } from "@/components/encarte/SizeEditor";
 import { Button } from "@/components/ui/Button";
 import { Card, Erro, SecaoVazia } from "@/components/ui/Card";
@@ -39,6 +40,9 @@ interface LinhaResultado {
   erro: boolean;
   suggestions: ResultadoMatch[];
   escolhida: ResultadoMatch | null;
+  // Etapa 21: qual foto usar pra esse item - null = usa a do banco
+  // (product.photoS3Url); senao, uma das userPhotos escolhida.
+  fotoEscolhida: string | null;
 }
 
 const PLACEHOLDER = `Agrião 1,48 un
@@ -132,6 +136,7 @@ export default function GenerateEncartePage() {
         erro: false,
         suggestions: [],
         escolhida: null,
+        fotoEscolhida: null,
       }))
     );
 
@@ -144,6 +149,7 @@ export default function GenerateEncartePage() {
             erro: false,
             suggestions: [],
             escolhida: null,
+            fotoEscolhida: null,
           };
         }
         try {
@@ -154,6 +160,7 @@ export default function GenerateEncartePage() {
             erro: false,
             suggestions: resp.suggestions,
             escolhida: resp.exactMatch,
+            fotoEscolhida: null,
           };
         } catch {
           return {
@@ -162,6 +169,7 @@ export default function GenerateEncartePage() {
             erro: true,
             suggestions: [],
             escolhida: null,
+            fotoEscolhida: null,
           };
         }
       })
@@ -222,8 +230,23 @@ export default function GenerateEncartePage() {
     setResultados((atual) =>
       atual
         ? atual.map((r, i) =>
-            i === indice ? { ...r, escolhida: sugestao } : r
+            // troca de produto: a foto escolhida antes era de outro
+            // produto, entao volta pro padrao (banco do novo produto)
+            i === indice
+              ? { ...r, escolhida: sugestao, fotoEscolhida: null }
+              : r
           )
+        : atual
+    );
+  }
+
+  // Etapa 21: escolhe entre a foto do banco e um dos uploads do
+  // usuario pra esse item especifico - so vale pra este encarte, nao
+  // muda a foto principal do produto (isso e feito em Preparação).
+  function escolherFoto(indice: number, url: string | null) {
+    setResultados((atual) =>
+      atual
+        ? atual.map((r, i) => (i === indice ? { ...r, fotoEscolhida: url } : r))
         : atual
     );
   }
@@ -237,7 +260,7 @@ export default function GenerateEncartePage() {
         nome: r.escolhida.product.name,
         preco: r.linha.preco || "0,00",
         unidade: r.linha.unidade,
-        fotoUrl: r.escolhida.product.photoS3Url,
+        fotoUrl: r.fotoEscolhida ?? r.escolhida.product.photoS3Url,
       })) ?? [];
 
   // Mesmos itens do preview, so com os nomes de campo em ingles que o
@@ -326,6 +349,14 @@ export default function GenerateEncartePage() {
                           </span>
                         )}
                       </div>
+
+                      {r.escolhida ? (
+                        <SeletorDeFoto
+                          produto={r.escolhida.product}
+                          fotoEscolhida={r.fotoEscolhida}
+                          onEscolher={(url) => escolherFoto(i, url)}
+                        />
+                      ) : null}
 
                       {!r.carregando &&
                       !r.escolhida &&

@@ -95,6 +95,17 @@ export const productService = {
     await prisma.product.delete({ where: { id } });
   },
 
+  // Etapa 21: adiciona ao array em vez de substituir - cada upload do
+  // usuario fica disponivel como opcao a mais (nao troca a foto do
+  // banco publico, que continua existindo como alternativa).
+  async adicionarFotoUsuario(userId: string, id: string, url: string) {
+    await this.garantirPropriedade(userId, id);
+    return prisma.product.update({
+      where: { id },
+      data: { userPhotos: { push: url } },
+    });
+  },
+
   async garantirPropriedade(userId: string, id: string) {
     const existe = await prisma.product.findFirst({
       where: { id, company: { userId } },

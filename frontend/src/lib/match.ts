@@ -4,6 +4,9 @@ export interface ProdutoMatch {
   id: string;
   name: string;
   photoS3Url: string;
+  // Etapa 21: fotos que o usuario ja subiu pra esse produto, alem da
+  // do banco publico - quem gera o encarte escolhe qual usar.
+  userPhotos: string[];
 }
 
 export interface ResultadoMatch {

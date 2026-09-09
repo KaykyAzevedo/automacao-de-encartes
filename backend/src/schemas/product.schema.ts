@@ -63,5 +63,15 @@ export const productIdSchema = z.object({
   id: z.string().trim().min(1, "id inválido"),
 });
 
+// POST /api/products/upload-photo: multipart/form-data, productId vem
+// junto no body (multer.single("file") preenche req.body com os
+// outros campos de texto do form antes do controller rodar).
+export const uploadPhotoSchema = z.object({
+  productId: z
+    .string({ message: "productId é obrigatório" })
+    .trim()
+    .min(1, "productId não pode ser vazio"),
+});
+
 export type CriarProductInput = z.infer<typeof criarProductSchema>;
 export type AtualizarProductInput = z.infer<typeof atualizarProductSchema>;

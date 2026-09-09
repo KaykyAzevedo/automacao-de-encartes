@@ -24,6 +24,7 @@ interface ProdutoIndexado {
   id: string;
   name: string;
   photoS3Url: string;
+  userPhotos: string[];
   busca: string;
 }
 
@@ -32,6 +33,9 @@ export interface ResultadoMatch {
     id: string;
     name: string;
     photoS3Url: string;
+    // Etapa 21: uploads do usuario para esse produto, alem da foto do
+    // banco publico - quem gera o encarte escolhe qual usar.
+    userPhotos: string[];
   };
   confidence: number;
 }
@@ -52,7 +56,7 @@ export const productMatchService = {
 
     const produtos = await prisma.product.findMany({
       where: { companyId },
-      select: { id: true, name: true, photoS3Url: true },
+      select: { id: true, name: true, photoS3Url: true, userPhotos: true },
     });
 
     if (produtos.length === 0) {
@@ -79,6 +83,7 @@ export const productMatchService = {
           id: item.id,
           name: item.name,
           photoS3Url: item.photoS3Url,
+          userPhotos: item.userPhotos,
         },
         // Fuse: 0 = perfeito. Invertido para "confidence", 1 = perfeito.
         confidence: Number((1 - (score ?? 0)).toFixed(4)),

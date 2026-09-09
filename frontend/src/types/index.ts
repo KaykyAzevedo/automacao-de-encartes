@@ -31,6 +31,19 @@ export interface Theme {
   updatedAt: string;
 }
 
+export interface Product {
+  id: string;
+  companyId: string;
+  name: string;
+  photoS3Url: string;
+  // Etapa 21: fotos que o usuario mandou pra esse produto, alem da do
+  // banco publico (photoS3Url) - nao substituem, ficam como opcao.
+  userPhotos: string[];
+  createdAt: string;
+  updatedAt: string;
+  company?: { id: string; name: string };
+}
+
 export type FormatoEncarte = 1 | 2 | 4 | 6 | 8 | 10;
 export type TamanhoSaida = "feed" | "stories";
 
