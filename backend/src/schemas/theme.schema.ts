@@ -12,6 +12,8 @@ export const DIAS_SEMANA = [
   "domingo",
 ] as const;
 
+export type DiaSemana = (typeof DIAS_SEMANA)[number];
+
 // Validacao basica de SVG: nao faz parsing XML completo, so confere
 // que o conteudo comeca com <svg e termina com </svg>.
 const svgValido = z
