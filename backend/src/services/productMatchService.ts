@@ -40,6 +40,57 @@ export interface ResultadoMatch {
   confidence: number;
 }
 
+// Logica pura do fuzzy matching, separada da busca no banco para poder
+// ser testada com uma lista de produtos qualquer (sem prisma/mocks).
+export function buscarCorrespondencias(
+  produtos: ProdutoIndexado[],
+  userInput: string
+): { exactMatch: ResultadoMatch | null; suggestions: ResultadoMatch[] } {
+  if (produtos.length === 0 || normalizar(userInput) === "") {
+    return { exactMatch: null, suggestions: [] };
+  }
+
+  const indexados: ProdutoIndexado[] = produtos.map((p) => ({
+    ...p,
+    busca: normalizar(p.name),
+  }));
+
+  const fuse = new Fuse(indexados, {
+    keys: ["busca"],
+    includeScore: true,
+    threshold: FUSE_THRESHOLD,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  });
+
+  const resultados = fuse
+    .search(normalizar(userInput), { limit: 3 })
+    .map(({ item, score }) => ({
+      product: {
+        id: item.id,
+        name: item.name,
+        photoS3Url: item.photoS3Url,
+        userPhotos: item.userPhotos,
+      },
+      // Fuse: 0 = perfeito. Invertido para "confidence", 1 = perfeito.
+      confidence: Number((1 - (score ?? 0)).toFixed(4)),
+    }));
+
+  const [melhor, segundo] = resultados;
+  const semAmbiguidade =
+    !segundo ||
+    melhor.confidence - segundo.confidence >= MARGEM_MINIMA_DESEMPATE;
+
+  if (melhor && melhor.confidence >= LIMIAR_CONFIANCA && semAmbiguidade) {
+    // confiante e sem concorrente proximo: devolve so o match
+    return { exactMatch: melhor, suggestions: [] };
+  }
+
+  // sem confianca suficiente, ou empatado com outro candidato:
+  // devolve as opcoes para quem chamou decidir
+  return { exactMatch: null, suggestions: resultados };
+}
+
 export const productMatchService = {
   // Recebe o nome como o usuario digitou (com ou sem acento, com
   // possivel erro de digitacao) e tenta achar o produto do catalogo.
@@ -59,48 +110,9 @@ export const productMatchService = {
       select: { id: true, name: true, photoS3Url: true, userPhotos: true },
     });
 
-    if (produtos.length === 0) {
-      return { exactMatch: null, suggestions: [] };
-    }
-
-    const indexados: ProdutoIndexado[] = produtos.map((p) => ({
-      ...p,
-      busca: normalizar(p.name),
-    }));
-
-    const fuse = new Fuse(indexados, {
-      keys: ["busca"],
-      includeScore: true,
-      threshold: FUSE_THRESHOLD,
-      ignoreLocation: true,
-      minMatchCharLength: 2,
-    });
-
-    const resultados = fuse
-      .search(normalizar(userInput), { limit: 3 })
-      .map(({ item, score }) => ({
-        product: {
-          id: item.id,
-          name: item.name,
-          photoS3Url: item.photoS3Url,
-          userPhotos: item.userPhotos,
-        },
-        // Fuse: 0 = perfeito. Invertido para "confidence", 1 = perfeito.
-        confidence: Number((1 - (score ?? 0)).toFixed(4)),
-      }));
-
-    const [melhor, segundo] = resultados;
-    const semAmbiguidade =
-      !segundo ||
-      melhor.confidence - segundo.confidence >= MARGEM_MINIMA_DESEMPATE;
-
-    if (melhor && melhor.confidence >= LIMIAR_CONFIANCA && semAmbiguidade) {
-      // confiante e sem concorrente proximo: devolve so o match
-      return { exactMatch: melhor, suggestions: [] };
-    }
-
-    // sem confianca suficiente, ou empatado com outro candidato:
-    // devolve as opcoes para quem chamou decidir
-    return { exactMatch: null, suggestions: resultados };
+    return buscarCorrespondencias(
+      produtos.map((p) => ({ ...p, busca: "" })),
+      userInput
+    );
   },
 };
