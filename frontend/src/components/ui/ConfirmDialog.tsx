@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
+import { useTravaFoco } from "@/hooks/useTravaFoco";
 
 import { Button } from "./Button";
 
@@ -21,6 +23,8 @@ export function ConfirmDialog({
   onConfirmar: () => void;
   onCancelar: () => void;
 }) {
+  const painelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fechar = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancelar();
@@ -28,6 +32,8 @@ export function ConfirmDialog({
     window.addEventListener("keydown", fechar);
     return () => window.removeEventListener("keydown", fechar);
   }, [onCancelar]);
+
+  useTravaFoco(painelRef);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -37,10 +43,12 @@ export function ConfirmDialog({
         aria-hidden="true"
       />
       <div
+        ref={painelRef}
         role="alertdialog"
         aria-modal="true"
         aria-label={titulo}
-        className="relative w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
+        tabIndex={-1}
+        className="relative w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl outline-none dark:border-neutral-800 dark:bg-neutral-950"
       >
         <h2 className="text-sm font-semibold">{titulo}</h2>
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -57,7 +65,7 @@ export function ConfirmDialog({
           <Button
             variante="perigo"
             onClick={onConfirmar}
-            disabled={carregando}
+            carregando={carregando}
             autoFocus
           >
             {carregando ? "Excluindo..." : rotuloConfirmar}

@@ -2,6 +2,8 @@
 
 import type { ButtonHTMLAttributes } from "react";
 
+import { Spinner } from "./Spinner";
+
 type Variante = "primario" | "secundario" | "perigo" | "fantasma";
 
 const ESTILOS: Record<Variante, string> = {
@@ -18,12 +20,25 @@ const ESTILOS: Record<Variante, string> = {
 export function Button({
   variante = "primario",
   className = "",
+  carregando = false,
+  disabled,
+  children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: Variante }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variante?: Variante;
+  // mostra o spinner e desabilita o botao - poupa cada tela de
+  // repetir "disabled={pending}" + o proprio marcador de carregando
+  carregando?: boolean;
+}) {
   return (
     <button
       {...props}
+      disabled={disabled || carregando}
+      aria-busy={carregando || undefined}
       className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${ESTILOS[variante]} ${className}`}
-    />
+    >
+      {carregando ? <Spinner tamanho="sm" /> : null}
+      {children}
+    </button>
   );
 }

@@ -7,6 +7,7 @@ import { Erro } from "@/components/ui/Card";
 import { Campo, Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { SkeletonLista } from "@/components/ui/Skeleton";
+import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
 import {
   DIAS_SEMANA,
@@ -233,7 +234,8 @@ function FormularioTema({
                       e.target.value = "";
                     }}
                   />
-                  <span className="block cursor-pointer rounded border border-neutral-300 px-2 py-1 text-center text-[11px] transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+                  <span className="flex cursor-pointer items-center justify-center gap-1 rounded border border-neutral-300 px-2 py-1 text-center text-[11px] transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+                    {enviando === formato ? <Spinner tamanho="sm" /> : null}
                     {enviando === formato
                       ? "Enviando..."
                       : conteudo
@@ -252,7 +254,8 @@ function FormularioTema({
       <div className="flex gap-2 pt-1">
         <Button
           onClick={() => void salvar()}
-          disabled={salvando || enviando !== null}
+          disabled={enviando !== null}
+          carregando={salvando}
         >
           {salvando ? "Salvando..." : editando ? "Salvar" : "Criar tema"}
         </Button>

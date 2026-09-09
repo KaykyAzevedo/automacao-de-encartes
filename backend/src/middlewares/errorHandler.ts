@@ -3,6 +3,7 @@ import { MulterError } from "multer";
 import { ZodError } from "zod";
 
 import { AppError } from "../lib/errors";
+import { logger } from "../lib/logger";
 
 const MENSAGENS_MULTER: Record<string, string> = {
   LIMIT_FILE_SIZE: "Arquivo maior que o limite permitido (8 MB)",
@@ -11,7 +12,7 @@ const MENSAGENS_MULTER: Record<string, string> = {
 
 export function errorHandler(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) {
@@ -32,6 +33,9 @@ export function errorHandler(
   }
 
   if (err instanceof AppError) {
+    // erro esperado (404, 401...), nao um bug - fica em debug pra nao
+    // afogar o log de erro real com "empresa nao encontrada" etc
+    (req.log ?? logger).debug({ status: err.status }, err.message);
     return res.status(err.status).json({ error: err.message });
   }
 
@@ -48,7 +52,9 @@ export function errorHandler(
       .json({ error: "JSON inválido no corpo da requisição" });
   }
 
-  console.error(err);
+  // so chega aqui um bug de verdade (nao previsto pelos casos acima) -
+  // esse sim precisa aparecer com destaque no log
+  (req.log ?? logger).error({ err }, "Erro não tratado");
   return res.status(500).json({ error: "Erro interno do servidor" });
 }
 

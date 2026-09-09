@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { productController } from "../controllers/product.controller";
+import { limitadorUpload } from "../middlewares/rateLimiter";
 import { requireAuth } from "../middlewares/requireAuth";
 import { uploadMiddleware } from "../middlewares/upload";
 
@@ -17,6 +18,7 @@ productRoutes.get("/search", productController.buscar);
 productRoutes.post("/match", productController.match);
 productRoutes.post(
   "/upload-photo",
+  limitadorUpload,
   uploadMiddleware,
   productController.uploadFoto
 );

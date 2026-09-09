@@ -305,7 +305,10 @@ export default function GenerateEncartePage() {
                 />
               </Campo>
               <div className="mt-3">
-                <Button onClick={() => void processar()} disabled={processando}>
+                <Button
+                  onClick={() => void processar()}
+                  carregando={processando}
+                >
                   {processando ? "Processando..." : "Processar"}
                 </Button>
               </div>
@@ -484,6 +487,7 @@ export default function GenerateEncartePage() {
                       <Button
                         onClick={() => void baixar("png")}
                         disabled={exportando !== null}
+                        carregando={exportando === "png"}
                       >
                         {exportando === "png"
                           ? "Gerando..."
@@ -493,6 +497,7 @@ export default function GenerateEncartePage() {
                         variante="secundario"
                         onClick={() => void baixar("jpeg")}
                         disabled={exportando !== null}
+                        carregando={exportando === "jpeg"}
                       >
                         {exportando === "jpeg"
                           ? "Gerando..."

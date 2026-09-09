@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
+import { useTravaFoco } from "@/hooks/useTravaFoco";
 
 export function Modal({
   titulo,
@@ -13,6 +15,8 @@ export function Modal({
   children: React.ReactNode;
   largura?: string;
 }) {
+  const painelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fechar = (e: KeyboardEvent) => {
       if (e.key === "Escape") onFechar();
@@ -20,6 +24,8 @@ export function Modal({
     window.addEventListener("keydown", fechar);
     return () => window.removeEventListener("keydown", fechar);
   }, [onFechar]);
+
+  useTravaFoco(painelRef);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -29,10 +35,12 @@ export function Modal({
         aria-hidden="true"
       />
       <div
+        ref={painelRef}
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className={`relative max-h-[90vh] w-full ${largura} overflow-y-auto rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-950`}
+        tabIndex={-1}
+        className={`relative max-h-[90vh] w-full ${largura} overflow-y-auto rounded-xl border border-neutral-200 bg-white p-6 shadow-xl outline-none dark:border-neutral-800 dark:bg-neutral-950`}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold">{titulo}</h2>

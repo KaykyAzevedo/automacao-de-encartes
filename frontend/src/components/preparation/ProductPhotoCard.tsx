@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
 import {
   useDefinirFotoPrincipal,
@@ -83,7 +84,8 @@ export function ProductPhotoCard({
                 e.target.value = "";
               }}
             />
-            <span className="inline-block cursor-pointer rounded-lg border border-neutral-300 px-2.5 py-1 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+            <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+              {upload.isPending ? <Spinner tamanho="sm" /> : null}
               {upload.isPending ? "Enviando..." : "+ Adicionar foto"}
             </span>
           </label>

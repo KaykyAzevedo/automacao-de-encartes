@@ -136,7 +136,7 @@ export function FormCompany({
       {erroGeral ? <Erro>{erroGeral}</Erro> : null}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={salvando}>
+        <Button type="submit" carregando={salvando}>
           {salvando ? "Salvando..." : editando ? "Salvar" : "Criar empresa"}
         </Button>
         <Button

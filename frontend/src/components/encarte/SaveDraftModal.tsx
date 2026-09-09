@@ -63,7 +63,7 @@ export function SaveDraftModal({
         {erro ? <Erro>{erro}</Erro> : null}
 
         <div className="flex gap-2 pt-1">
-          <Button onClick={() => void salvar()} disabled={criar.isPending}>
+          <Button onClick={() => void salvar()} carregando={criar.isPending}>
             {criar.isPending ? "Salvando..." : "Salvar"}
           </Button>
           <Button
