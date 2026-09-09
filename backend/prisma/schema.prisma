@@ -96,6 +96,11 @@ model EncarteDraft {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  // Nome dado pelo usuario ao salvar (Etapa 20) - default so pra nao
+  // quebrar migracao se ja existisse alguma linha; a validacao real
+  // (obrigatorio, 1-120 chars) fica no schema zod do backend.
+  name String @default("Rascunho sem nome")
+
   // Input do user
   productList String @db.Text // "Agriao 1,48 un\nRucula..."
 

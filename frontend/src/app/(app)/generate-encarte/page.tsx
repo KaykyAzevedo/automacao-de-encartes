@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
+import { SaveDraftModal } from "@/components/encarte/SaveDraftModal";
 import { SizeEditor } from "@/components/encarte/SizeEditor";
 import { Button } from "@/components/ui/Button";
 import { Card, Erro, SecaoVazia } from "@/components/ui/Card";
@@ -10,6 +12,7 @@ import { Campo, Select } from "@/components/ui/Input";
 import { SkeletonLista } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
+import { useEncarte } from "@/hooks/useEncartes";
 import {
   baixarBlob,
   exportarEncarte,
@@ -66,6 +69,11 @@ export default function GenerateEncartePage() {
   const { data: empresas, isLoading: carregandoEmpresas } = useCompanies();
   const { mostrar } = useToast();
 
+  const searchParams = useSearchParams();
+  const draftId = searchParams.get("draftId");
+  const { data: draft } = useEncarte(draftId);
+  const [draftCarregado, setDraftCarregado] = useState(false);
+
   const [texto, setTexto] = useState("");
   const [processando, setProcessando] = useState(false);
   const [resultados, setResultados] = useState<LinhaResultado[] | null>(null);
@@ -73,6 +81,7 @@ export default function GenerateEncartePage() {
   const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
   const [formato, setFormato] = useState<FormatoEncarte>(4);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
+  const [mostrarSalvar, setMostrarSalvar] = useState(false);
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [resolucaoIndex, setResolucaoIndex] = useState(0);
@@ -81,10 +90,34 @@ export default function GenerateEncartePage() {
 
   const empresa = empresas?.[0];
 
-  async function processar() {
+  // Abrir um rascunho (Etapa 20, "?draftId=..." vindo de /drafts):
+  // preenche os campos e reprocessa a lista contra o catalogo atual -
+  // de proposito, em vez de so reidratar o preview com os
+  // parsedProducts salvos, ja que o produto pode ter mudado de foto ou
+  // saido do catalogo desde que o rascunho foi salvo.
+  useEffect(() => {
+    // espera a empresa tambem carregar - processar() precisa dela e
+    // nao ha garantia de qual das duas consultas volta primeiro
+    if (!draft || draftCarregado || !empresa) return;
+    setDraftCarregado(true);
+    setTexto(draft.productList);
+    setFormato(draft.selectedFormat);
+    if (draft.selectedThemeId) setTemaFamilia(draft.selectedThemeId);
+    const edicoes = draft.edits as Partial<EscalasTema>;
+    setEscalas({
+      foto: edicoes.foto ?? ESCALA_PADRAO.foto,
+      nome: edicoes.nome ?? ESCALA_PADRAO.nome,
+      preco: edicoes.preco ?? ESCALA_PADRAO.preco,
+    });
+    void processar(draft.productList);
+    mostrar("sucesso", `Rascunho "${draft.name}" carregado.`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, draftCarregado, empresa]);
+
+  async function processar(textoParaProcessar = texto) {
     if (!empresa) return;
 
-    const linhas = parsearLista(texto);
+    const linhas = parsearLista(textoParaProcessar);
     if (linhas.length === 0) {
       mostrar("erro", "Cole ao menos uma linha com produto e preço.");
       return;
@@ -206,6 +239,15 @@ export default function GenerateEncartePage() {
         unidade: r.linha.unidade,
         fotoUrl: r.escolhida.product.photoS3Url,
       })) ?? [];
+
+  // Mesmos itens do preview, so com os nomes de campo em ingles que o
+  // rascunho espera (backend/src/schemas/encarteDraft.schema.ts).
+  const parsedProductsParaSalvar = itensParaPreview.map((item) => ({
+    name: item.nome,
+    price: item.preco,
+    unit: item.unidade,
+    photoUrl: item.fotoUrl,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -440,6 +482,20 @@ export default function GenerateEncartePage() {
                       </p>
                     ) : null}
                   </Card>
+
+                  <Card>
+                    <h2 className="mb-3 text-sm font-semibold">Rascunho</h2>
+                    <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
+                      Salva a lista, o tema/formato e os ajustes de tamanho para
+                      retomar depois em Rascunhos.
+                    </p>
+                    <Button
+                      variante="secundario"
+                      onClick={() => setMostrarSalvar(true)}
+                    >
+                      Salvar rascunho
+                    </Button>
+                  </Card>
                 </>
               ) : (
                 <Erro>
@@ -455,6 +511,24 @@ export default function GenerateEncartePage() {
           </div>
         </div>
       )}
+
+      {mostrarSalvar && empresa ? (
+        <SaveDraftModal
+          dados={{
+            companyId: empresa.id,
+            productList: texto,
+            selectedThemeId: temaFamilia,
+            selectedFormat: formato,
+            parsedProducts: parsedProductsParaSalvar,
+            edits: { ...escalas } as Record<string, unknown>,
+          }}
+          onSalvo={(nome) => {
+            setMostrarSalvar(false);
+            mostrar("sucesso", `Rascunho "${nome}" salvo com sucesso.`);
+          }}
+          onFechar={() => setMostrarSalvar(false)}
+        />
+      ) : null}
     </div>
   );
 }
