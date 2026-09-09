@@ -207,3 +207,13 @@ export const RODAPE = `
 export function documento(conteudo: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">${DEFS}${FUNDO}${conteudo}${RODAPE}</svg>`;
 }
+
+// Usado só pelo tema "8 itens clássico": a moldura, a logo, o título,
+// as folhas decorativas e o rodapé já vêm prontos numa imagem de fundo
+// (réplica exata de uma arte pronta do usuário) - sem FUNDO nem RODAPE
+// compartilhados aqui, só as defs (gradiente "ouro", classes de fonte)
+// que o conteúdo dinâmico (foto, nome, preço, data) precisa pra se
+// desenhar por cima com a mesma cara do resto da família de temas.
+export function documentoComFundoFixo(conteudo: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">${DEFS}${conteudo}</svg>`;
+}

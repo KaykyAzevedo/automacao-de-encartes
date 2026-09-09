@@ -1,4 +1,4 @@
-import { toCanvas } from "html-to-image";
+import { getFontEmbedCSS, toCanvas } from "html-to-image";
 
 export type FormatoArquivo = "png" | "jpeg";
 
@@ -64,10 +64,21 @@ export async function exportarEncarte(
   const pixelRatio =
     elemento.offsetWidth > 0 ? nativa / elemento.offsetWidth : 1;
 
+  // Gerar o CSS das fontes A PARTE (em vez de deixar o toCanvas
+  // detectar sozinho) evita uma falha silenciosa observada no tema com
+  // imagem de fundo grande (8 itens "classico"): o download saia com
+  // uma fonte generica do sistema em vez da fonte certa, mesmo com a
+  // pre-visualizacao na tela correta. Calculando antes, como um passo
+  // proprio, o html-to-image nao precisa competir a deteccao de fontes
+  // com o trabalho de embutir uma imagem de fundo grande na mesma
+  // chamada.
+  const fontEmbedCSS = await comTimeout(getFontEmbedCSS(elemento), TIMEOUT_MS);
+
   const canvasOrigem = await comTimeout(
     toCanvas(elemento, {
       pixelRatio,
       backgroundColor: FUNDO,
+      fontEmbedCSS,
     }),
     TIMEOUT_MS
   );

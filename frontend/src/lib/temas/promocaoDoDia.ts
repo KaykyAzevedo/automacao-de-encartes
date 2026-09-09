@@ -1,4 +1,4 @@
-import { cabecalho, documento } from "./base";
+import { cabecalho, documento, documentoComFundoFixo } from "./base";
 import type { SlotNome } from "./nome";
 import type { Tema } from "./tipos";
 
@@ -105,7 +105,17 @@ function nome(
 // baseline. Mesmo assim a fonte ".peso" sobra ~6% do corpo pra baixo
 // do centro real (medido pixel a pixel) - o ajusteFino compensa isso
 // pros numeros ficarem simetricos de verdade, pra cima e pra baixo.
-function preco(n: number, caixa: Caixa, corpo: number, escala: number): string {
+function preco(
+  n: number,
+  caixa: Caixa,
+  corpo: number,
+  escala: number,
+  corNumero = "url(#ouro)",
+  brilho = true,
+  // false no tema "8 itens classico": a caixinha do preco ja vem
+  // desenhada na imagem de fundo, nao precisa redesenhar por cima.
+  comCaixa = true
+): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
   const cy = y + h / 2;
@@ -113,12 +123,16 @@ function preco(n: number, caixa: Caixa, corpo: number, escala: number): string {
   const ajusteFino = corpo * 0.06;
   return `
   <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
-          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>
+    ${
+      comCaixa
+        ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
+          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
+        : ""
+    }
     <text class="peso" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
           font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
     <text class="peso" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
-          font-size="${corpo}" fill="url(#ouro)" filter="url(#brilhoSuave)">{{ITEM_${n}_PRECO}}</text>
+          font-size="${corpo}" fill="${corNumero}"${brilho ? ' filter="url(#brilhoSuave)"' : ""}>{{ITEM_${n}_PRECO}}</text>
     <text class="peso" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
           font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
   </g>`;
@@ -257,36 +271,120 @@ function grade6(escalas: EscalasTema): ResultadoGrade {
   return { svg: partes.join(""), slots };
 }
 
-// ---------- 8 itens: 2 x 4, foto alternando de lado ----------
-// Hierarquia do encarte: foto e preco em evidencia, nome e o menos
-// importante. Foto cresceu (148->160) e o preco tambem (48->52); o
-// nome encolheu (23->19) pra abrir espaco pros dois.
-function grade8(escalas: EscalasTema): ResultadoGrade {
-  const partes: string[] = [];
-  const slots: SlotNome[] = [];
-  const colunas = [52, 560];
-  const linhas = [382, 570, 758, 946];
+// ---------- 8 itens "classico": replica pixel a pixel de uma arte
+// pronta do usuario ----------
+// Bem diferente do resto da familia: aqui a moldura dos cards, a logo,
+// o titulo e as folhas decorativas ja vem prontos numa imagem de fundo
+// (public/temas/promocao-do-dia-8-itens-classico.png, exportada em
+// branco pelo usuario) - o codigo aqui desenha por cima o que muda de
+// fato: foto, nome, moldura do preco + preco/unidade, endereco das
+// duas lojas e a data.
+const FUNDO_CLASSICO_8_ITENS = "/temas/promocao-do-dia-8-itens-classico.png";
 
-  linhas.forEach((y, li) => {
-    colunas.forEach((x, ci) => {
+// A imagem de referencia e 1092x1440 (nao e exatamente a proporcao
+// 4:5/1080x1350 do resto dos temas). "meet" dentro do viewBox 1080x1350
+// escala pela altura (fator 1350/1440) e sobra uma faixinha preta dos
+// dois lados - invisivel, o fundo da imagem ja e preto. Toda posicao
+// abaixo foi medida pixel a pixel na imagem ORIGINAL (1092x1440) e
+// convertida por esse fator - nx()/ny()/nd() fazem essa conversao.
+const ESCALA_FUNDO_CLASSICO = 1350 / 1440;
+const OFFSET_X_FUNDO_CLASSICO = (1080 - 1092 * ESCALA_FUNDO_CLASSICO) / 2;
+
+function nx(nativeX: number): number {
+  return OFFSET_X_FUNDO_CLASSICO + nativeX * ESCALA_FUNDO_CLASSICO;
+}
+function ny(nativeY: number): number {
+  return nativeY * ESCALA_FUNDO_CLASSICO;
+}
+function nd(nativeDelta: number): number {
+  return nativeDelta * ESCALA_FUNDO_CLASSICO;
+}
+
+function grade8(escalas: EscalasTema): ResultadoGrade {
+  const partes: string[] = [
+    `<image href="${FUNDO_CLASSICO_8_ITENS}" x="0" y="0" width="1080" height="1350"
+            preserveAspectRatio="xMidYMid meet"/>`,
+  ];
+  const slots: SlotNome[] = [];
+
+  // Cantos superiores esquerdos de cada card, medidos na imagem original.
+  const colunasNativas = [20, 557];
+  const linhasNativas = [350, 548, 746, 944];
+  const alturaCardNativa = 175;
+
+  linhasNativas.forEach((yCard, li) => {
+    colunasNativas.forEach((xCard, ci) => {
       const n = li * 2 + ci + 1;
-      const card: Caixa = { x, y, w: 468, h: 172 };
-      // coluna da esquerda com a foto a esquerda, direita espelhada,
-      // como no encarte original
-      const fotoEsquerda = ci === 0;
-      const fotoX = fotoEsquerda ? x + 10 : x + 298;
-      const textoX = fotoEsquerda ? x + 176 : x + 14;
-      const cx = textoX + 139;
+
+      const fotoCaixa: Caixa = {
+        x: nx(xCard + 10),
+        y: ny(yCard + 8),
+        w: nd(220),
+        h: nd(alturaCardNativa - 16),
+      };
+      const textoEsq = nx(xCard + 245);
+      const textoDir = nx(xCard + 480);
+      const cx = (textoEsq + textoDir) / 2;
+      const nomeBaseline = ny(yCard + 51);
+      const precoCaixa: Caixa = {
+        x: nx(xCard + 249),
+        y: ny(yCard + 80),
+        w: nd(228),
+        h: nd(90),
+      };
 
       partes.push(
-        moldura(card, 18),
-        foto(n, { x: fotoX, y: y + 6, w: 160, h: 160 }, escalas.foto),
-        nome(n, cx, y + 56, 19, textoX, textoX + 278, escalas.nome),
-        preco(n, { x: textoX, y: y + 74, w: 278, h: 86 }, 65, escalas.preco)
+        foto(n, fotoCaixa, escalas.foto),
+        // nome() padrao (linhas, sem folha) - essa versao da imagem de
+        // fundo nao traz mais essa faixa pronta, ao contrario da
+        // primeira que o usuario mandou
+        nome(n, cx, nomeBaseline, 19, textoEsq, textoDir, escalas.nome),
+        // com moldura propria agora (comCaixa=true) - a caixinha de
+        // preco tambem nao vem mais pronta na imagem
+        preco(n, precoCaixa, 48, escalas.preco, "#f7ead0", false, true)
       );
-      slots.push({ x: cx, tamanho: 19, larguraMax: 240, espacamento: 1.6 });
+      slots.push({
+        x: cx,
+        tamanho: 19,
+        larguraMax: textoDir - textoEsq - 16,
+        espacamento: 1.6,
+      });
     });
   });
+
+  // Endereco das duas lojas: essa versao da imagem de fundo deixou o
+  // vao entre a grade e a barra de validade completamente vazio (a
+  // primeira versao trazia isso pronto) - mesmo padrao visual do
+  // RODAPE compartilhado (pino, nome, endereco, whatsapp, divisoria),
+  // so deslocado pra caber nesse vao especifico.
+  const yEndereco = 1076;
+  partes.push(`
+    <g fill="url(#ouro)"><use href="#pino" transform="translate(132,${yEndereco + 42})"/></g>
+    <text class="serifa" x="176" y="${yEndereco + 24}" font-size="30" letter-spacing="2"
+          fill="url(#ouro)" font-weight="700">{{LOJA_1_NOME}}</text>
+    <text class="sans" x="176" y="${yEndereco + 58}" font-size="19" letter-spacing="1.1"
+          fill="#e6e6e6">{{LOJA_1_ENDERECO}}</text>
+    <g><use href="#zap" transform="translate(187,${yEndereco + 90})"/></g>
+    <text class="sans" x="206" y="${yEndereco + 97}" font-size="17" letter-spacing="1.1"
+          fill="#e6e6e6">WHATSAPP: {{LOJA_1_WHATSAPP}}</text>
+
+    <line x1="540" y1="${yEndereco}" x2="540" y2="${yEndereco + 68}" stroke="url(#ouroLinha)" stroke-width="1.4"/>
+
+    <g fill="url(#ouro)"><use href="#pino" transform="translate(598,${yEndereco + 42})"/></g>
+    <text class="serifa" x="642" y="${yEndereco + 24}" font-size="30" letter-spacing="2"
+          fill="url(#ouro)" font-weight="700">{{LOJA_2_NOME}}</text>
+    <text class="sans" x="642" y="${yEndereco + 58}" font-size="19" letter-spacing="1.1"
+          fill="#e6e6e6">{{LOJA_2_ENDERECO}}</text>
+    <g><use href="#zap" transform="translate(653,${yEndereco + 90})"/></g>
+    <text class="sans" x="672" y="${yEndereco + 97}" font-size="17" letter-spacing="1.1"
+          fill="#e6e6e6">WHATSAPP: {{LOJA_2_WHATSAPP}}</text>
+  `);
+
+  // Data: unico texto do rodape que a barra de validade deixa vazio.
+  partes.push(
+    `<text class="sans" x="${nx(547)}" y="${ny(1310)}" dominant-baseline="central" text-anchor="middle"
+           font-size="17" letter-spacing="2.8" fill="url(#ouro)" font-weight="500">PROMOÇÃO VÁLIDA {{VALIDADE}} OU ENQUANTO DURAR NOSSO ESTOQUE</text>`
+  );
 
   return { svg: partes.join(""), slots };
 }
@@ -343,6 +441,26 @@ function montar(
   };
 }
 
+// O "8 itens classico" nao usa cabecalho()/FUNDO/RODAPE compartilhados
+// (a imagem de fundo ja traz tudo isso pronto - ver grade8()), entao
+// monta o documento direto em vez de passar por montar().
+function montarComFundoFixo(
+  id: string,
+  rotulo: string,
+  formato: number,
+  gradeFn: FuncaoGrade,
+  escalas: EscalasTema
+): Tema {
+  const grade = gradeFn(escalas);
+  return {
+    id,
+    nome: rotulo,
+    formato,
+    svg: documentoComFundoFixo(grade.svg),
+    slotsNome: grade.slots,
+  };
+}
+
 // Reconstroi os 6 formatos a partir das escalas atuais. Chamada de
 // novo a cada mudanca de slider (Etapa 18): e so concatenacao de
 // string, entao refazer isto a cada re-render e barato.
@@ -382,11 +500,10 @@ export function construirTemasPromocaoDoDia(
       grade6,
       escalas
     ),
-    montar(
+    montarComFundoFixo(
       "promocao-do-dia-8",
       "Promoção do Dia · 8 itens",
       8,
-      true,
       grade8,
       escalas
     ),
