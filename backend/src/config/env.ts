@@ -1,4 +1,12 @@
-import "dotenv/config";
+import { config } from "dotenv";
+
+// override: true - o backend/.env manda mais que qualquer PORT (ou
+// outra variavel) que ja esteja no ambiente. Sem isso, um PORT=3000
+// vazando do sistema/terminal (comum no Windows) vence o PORT=5000
+// do .env silenciosamente - dotenv nao sobrescreve env vars existentes
+// por padrao - e o backend tenta subir na mesma porta do frontend,
+// derruba com EADDRINUSE e nada mais no app funciona.
+config({ override: true });
 
 // "local": nao exige login, tudo roda como um usuario local fixo.
 // "google": exige sessao do NextAuth (o modo definitivo).
