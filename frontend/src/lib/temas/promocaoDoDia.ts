@@ -1,4 +1,5 @@
 import { cabecalho, documento, documentoComFundoFixo } from "./base";
+import { classeDaFonte, type FonteId } from "./fontesDisponiveis";
 import type { SlotNome } from "./nome";
 import type { Tema } from "./tipos";
 
@@ -15,13 +16,27 @@ interface Caixa {
 // Fatores de 0.5 a 1.5 (50% a 150%) vindos do editor visual (Etapa 18).
 // Cada elemento escala em torno do proprio centro/base, sem mudar a
 // posicao das bordas do card - so o conteudo cresce ou encolhe.
+// Etapa 30: alem do tamanho, cada elemento de texto tambem escolhe a
+// propria fonte (independente um do outro) - ex.: nome numa serifa
+// elegante, preco numa condensada de impacto. Opcional pra nao quebrar
+// quem ja chamava isto so com foto/nome/preco (ver ESCALA_PADRAO).
 export interface EscalasTema {
   foto: number;
   nome: number;
   preco: number;
+  fonteNome?: FonteId;
+  fontePreco?: FonteId;
+  fonteUnidade?: FonteId;
 }
 
-export const ESCALA_PADRAO: EscalasTema = { foto: 1, nome: 1, preco: 1 };
+export const ESCALA_PADRAO: EscalasTema = {
+  foto: 1,
+  nome: 1,
+  preco: 1,
+  fonteNome: "serifa",
+  fontePreco: "peso",
+  fonteUnidade: "peso",
+};
 
 function moldura({ x, y, w, h }: Caixa, raio = 26): string {
   return `
@@ -83,7 +98,10 @@ function nome(
   tamanho: number,
   bordaEsq: number,
   bordaDir: number,
-  escala: number
+  escala: number,
+  // Etapa 30: fonte escolhida pelo usuario pro nome do produto -
+  // "serifa" (Cinzel) e o visual original, mantido como padrao.
+  fonte: FonteId = "serifa"
 ): string {
   const compLinha = Math.min(80, (bordaDir - bordaEsq) * 0.16);
   return `
@@ -92,7 +110,7 @@ function nome(
           stroke="url(#ouroLinha)" stroke-width="1.3"/>
     <line x1="${bordaDir - compLinha}" y1="${baseline - 16}" x2="${bordaDir}" y2="${baseline - 16}"
           stroke="url(#ouroLinha)" stroke-width="1.3"/>
-    <text class="serifa" x="${cx}" y="${baseline}" text-anchor="middle" font-size="${tamanho}"
+    <text class="${classeDaFonte(fonte)}" x="${cx}" y="${baseline}" text-anchor="middle" font-size="${tamanho}"
           letter-spacing="2.5" fill="url(#ouro)" font-weight="700">{{ITEM_${n}_NOME}}</text>
   </g>`;
 }
@@ -114,13 +132,19 @@ function preco(
   brilho = true,
   // false no tema "8 itens classico": a caixinha do preco ja vem
   // desenhada na imagem de fundo, nao precisa redesenhar por cima.
-  comCaixa = true
+  comCaixa = true,
+  // Etapa 30: fonte do "R$"+numero e da unidade, escolhidas
+  // separadamente pelo usuario - "peso" (Anton) e o visual original.
+  fontePreco: FonteId = "peso",
+  fonteUnidade: FonteId = "peso"
 ): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
   const cy = y + h / 2;
   const meio = y + h / 2;
   const ajusteFino = corpo * 0.06;
+  const classePreco = classeDaFonte(fontePreco);
+  const classeUnidade = classeDaFonte(fonteUnidade);
   return `
   <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
     ${
@@ -129,11 +153,11 @@ function preco(
           fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
         : ""
     }
-    <text class="peso" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
+    <text class="${classePreco}" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
           font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
-    <text class="peso" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
+    <text class="${classePreco}" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
           font-size="${corpo}" fill="${corNumero}"${brilho ? ' filter="url(#brilhoSuave)"' : ""}>{{ITEM_${n}_PRECO}}</text>
-    <text class="peso" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
+    <text class="${classeUnidade}" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
           font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
   </g>`;
 }
@@ -338,10 +362,29 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
         // nome() padrao (linhas, sem folha) - essa versao da imagem de
         // fundo nao traz mais essa faixa pronta, ao contrario da
         // primeira que o usuario mandou
-        nome(n, cx, nomeBaseline, 19, textoEsq, textoDir, escalas.nome),
+        nome(
+          n,
+          cx,
+          nomeBaseline,
+          19,
+          textoEsq,
+          textoDir,
+          escalas.nome,
+          escalas.fonteNome
+        ),
         // com moldura propria agora (comCaixa=true) - a caixinha de
         // preco tambem nao vem mais pronta na imagem
-        preco(n, precoCaixa, 48, escalas.preco, "#f7ead0", false, true)
+        preco(
+          n,
+          precoCaixa,
+          48,
+          escalas.preco,
+          "#f7ead0",
+          false,
+          true,
+          escalas.fontePreco,
+          escalas.fonteUnidade
+        )
       );
       slots.push({
         x: cx,

@@ -121,6 +121,12 @@ export default function GenerateEncartePage() {
       foto: edicoes.foto ?? ESCALA_PADRAO.foto,
       nome: edicoes.nome ?? ESCALA_PADRAO.nome,
       preco: edicoes.preco ?? ESCALA_PADRAO.preco,
+      // Etapa 30: fonte por elemento - rascunhos salvos antes desta
+      // etapa nao tem essas chaves, cai no padrao (mesmo visual de
+      // sempre)
+      fonteNome: edicoes.fonteNome ?? ESCALA_PADRAO.fonteNome,
+      fontePreco: edicoes.fontePreco ?? ESCALA_PADRAO.fontePreco,
+      fonteUnidade: edicoes.fonteUnidade ?? ESCALA_PADRAO.fonteUnidade,
     });
     void processar(draft.productList);
     mostrar("sucesso", `Rascunho "${draft.name}" carregado.`);

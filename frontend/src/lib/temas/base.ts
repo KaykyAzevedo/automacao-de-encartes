@@ -82,6 +82,8 @@ export const DEFS = `
     .peso   { font-family: var(--fonte-peso), sans-serif; }
     .sans   { font-family: var(--fonte-sans), sans-serif; }
     .mao    { font-family: var(--fonte-mao), cursive; }
+    .bebas  { font-family: var(--fonte-bebas), sans-serif; }
+    .oswald { font-family: var(--fonte-oswald), sans-serif; }
   </style>
 `;
 

@@ -1,9 +1,11 @@
 import {
   Anton,
+  Bebas_Neue,
   Caveat,
   Cinzel,
   Inter,
   Montserrat,
+  Oswald,
   Pinyon_Script,
 } from "next/font/google";
 
@@ -44,6 +46,24 @@ export const fonteMao = Caveat({
   display: "swap",
 });
 
+// Etapa 30: mais 2 opcoes pro seletor de fonte por elemento (nome,
+// preco, unidade) na tela de gerar encarte - condensadas, boas pra
+// numero de preco e destaque, sem repetir o peso "Anton" que ja
+// existia. Todas do Google Fonts, licenca OFL (uso comercial livre).
+export const fonteBebas = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--fonte-bebas",
+  display: "swap",
+});
+
+export const fonteOswald = Oswald({
+  weight: ["500", "700"],
+  subsets: ["latin"],
+  variable: "--fonte-oswald",
+  display: "swap",
+});
+
 // Etapa 26: fonte da INTERFACE do app (botoes, menus, textos de tela)
 // - nao confundir com as fontes acima, usadas so dentro dos templates
 // SVG do encarte em si (lib/temas/base.ts). Aplicada globalmente via
@@ -62,4 +82,6 @@ export const classesDeFonte = [
   fonteSans.variable,
   fonteMao.variable,
   fonteInterface.variable,
+  fonteBebas.variable,
+  fonteOswald.variable,
 ].join(" ");
