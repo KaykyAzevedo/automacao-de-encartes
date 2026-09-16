@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, Erro, SecaoVazia } from "@/components/ui/Card";
 import { Campo, Select } from "@/components/ui/Input";
 import { SkeletonLista } from "@/components/ui/Skeleton";
+import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useEncarte } from "@/hooks/useEncartes";
@@ -38,6 +39,15 @@ const TEMAS_DISPONIVEIS = [
 // do Theme (banco), so saem da UI. Reativar e so trazer o seletor de
 // volta.
 const FORMATO_UNICO: FormatoEncarte = 8;
+
+type EtapaCriacao = 1 | 2 | 3 | 4;
+
+const ETAPAS: { numero: EtapaCriacao; titulo: string; descricao: string }[] = [
+  { numero: 1, titulo: "Produtos", descricao: "Cole sua lista" },
+  { numero: 2, titulo: "Revisar", descricao: "Confira os itens" },
+  { numero: 3, titulo: "Personalizar", descricao: "Ajuste a arte" },
+  { numero: 4, titulo: "Finalizar", descricao: "Salve e baixe" },
+];
 
 interface LinhaResultado {
   linha: LinhaProcessada;
@@ -78,11 +88,35 @@ export default function GenerateEncartePage() {
   const [texto, setTexto] = useState("");
   const [processando, setProcessando] = useState(false);
   const [resultados, setResultados] = useState<LinhaResultado[] | null>(null);
+  const [etapaAtiva, setEtapaAtiva] = useState<EtapaCriacao>(1);
+  const [etapaLiberada, setEtapaLiberada] = useState<EtapaCriacao>(1);
+  const [previewMobileAberto, setPreviewMobileAberto] = useState(false);
+
+  useEffect(() => {
+    if (!previewMobileAberto) return;
+
+    const overflowAnterior = document.body.style.overflow;
+    const fecharComEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewMobileAberto(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", fecharComEscape);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", fecharComEscape);
+    };
+  }, [previewMobileAberto]);
 
   const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
   const [formato, setFormato] = useState<FormatoEncarte>(FORMATO_UNICO);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [mostrarSalvar, setMostrarSalvar] = useState(false);
+  // Etapa 31: fundo customizado - so o estado de "enviando" fica aqui;
+  // a URL em si mora em escalas.fundoUrl (assim salva/restaura junto
+  // com o resto do rascunho, sem precisar de um campo novo no backend).
+  const [enviandoFundo, setEnviandoFundo] = useState(false);
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [resolucaoIndex, setResolucaoIndex] = useState(0);
@@ -127,6 +161,16 @@ export default function GenerateEncartePage() {
       fonteNome: edicoes.fonteNome ?? ESCALA_PADRAO.fonteNome,
       fontePreco: edicoes.fontePreco ?? ESCALA_PADRAO.fontePreco,
       fonteUnidade: edicoes.fonteUnidade ?? ESCALA_PADRAO.fonteUnidade,
+      // Etapa 31: posicao e fundo customizado - mesmo raciocinio,
+      // rascunho antigo cai no padrao (sem deslocamento, sem fundo
+      // proprio).
+      fotoOffsetX: edicoes.fotoOffsetX ?? ESCALA_PADRAO.fotoOffsetX,
+      fotoOffsetY: edicoes.fotoOffsetY ?? ESCALA_PADRAO.fotoOffsetY,
+      nomeOffsetX: edicoes.nomeOffsetX ?? ESCALA_PADRAO.nomeOffsetX,
+      nomeOffsetY: edicoes.nomeOffsetY ?? ESCALA_PADRAO.nomeOffsetY,
+      precoOffsetX: edicoes.precoOffsetX ?? ESCALA_PADRAO.precoOffsetX,
+      precoOffsetY: edicoes.precoOffsetY ?? ESCALA_PADRAO.precoOffsetY,
+      fundoUrl: edicoes.fundoUrl,
     });
     void processar(draft.productList);
     mostrar("sucesso", `Rascunho "${draft.name}" carregado.`);
@@ -192,6 +236,8 @@ export default function GenerateEncartePage() {
 
     setResultados(respostas);
     setProcessando(false);
+    setEtapaAtiva(2);
+    setEtapaLiberada((atual) => (atual < 2 ? 2 : atual));
 
     const reconhecidos = respostas.filter((r) => r.escolhida).length;
     mostrar(
@@ -241,6 +287,32 @@ export default function GenerateEncartePage() {
     }
   }
 
+  // Etapa 31: fundo customizado - sobe pelo endpoint generico de
+  // upload (mesmo usado pro link permanente do download) e aplica em
+  // escalas.fundoUrl. Sem calibracao pixel a pixel como a arte
+  // classica: usa uma grade generica por cima (ver grade8ComFundo em
+  // lib/temas/promocaoDoDia.ts) - por isso os controles de posicao do
+  // SizeEditor ajudam a encaixar o resultado na arte de cada um.
+  async function trocarFundo(file: File) {
+    setEnviandoFundo(true);
+    try {
+      const url = await uploadArquivo(file);
+      setEscalas((atual) => ({ ...atual, fundoUrl: url }));
+      mostrar("sucesso", "Fundo personalizado aplicado.");
+    } catch (err) {
+      mostrar(
+        "erro",
+        err instanceof Error ? err.message : "Falha ao enviar o fundo"
+      );
+    } finally {
+      setEnviandoFundo(false);
+    }
+  }
+
+  function removerFundo() {
+    setEscalas((atual) => ({ ...atual, fundoUrl: undefined }));
+  }
+
   function escolherSugestao(indice: number, sugestao: ResultadoMatch) {
     setResultados((atual) =>
       atual
@@ -287,13 +359,87 @@ export default function GenerateEncartePage() {
     photoUrl: item.fotoUrl,
   }));
 
+  const reconhecidos = resultados?.filter((r) => r.escolhida).length ?? 0;
+  const linhasDigitadas = texto
+    .split("\n")
+    .filter((linha) => linha.trim()).length;
+  const etapaMaxima = etapaLiberada;
+
+  const preview = (
+    <EncartePreviewer
+      produtos={itensParaPreview}
+      temaId={`${temaFamilia}-${formato}`}
+      formato={formato}
+      lojas={lojasParaEncarte}
+      validade={new Date().toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+      })}
+      escalas={escalas}
+    />
+  );
+
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="text-lg font-semibold">Gerar encarte</h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        Cole a lista de produtos, escolha o tema e o formato, e acompanhe a
-        pré-visualização ao vivo.
-      </p>
+    <div className="mx-auto max-w-7xl">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(var(--brand))]">
+            Estúdio de criação
+          </p>
+          <h1>Criar encarte</h1>
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            Siga as etapas para transformar sua lista de ofertas em uma arte
+            pronta para publicar.
+          </p>
+        </div>
+        {draft ? (
+          <span className="rounded-full bg-[rgb(var(--accent-soft))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--accent))]">
+            Editando: {draft.name}
+          </span>
+        ) : null}
+      </div>
+
+      <ol className="mt-7 grid grid-cols-4 gap-1 rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-2 sm:gap-2 sm:p-3">
+        {ETAPAS.map((etapa) => {
+          const ativa = etapa.numero === etapaAtiva;
+          const concluida =
+            etapa.numero < etapaAtiva && etapa.numero <= etapaMaxima;
+          const disponivel = etapa.numero <= etapaMaxima;
+          return (
+            <li key={etapa.numero}>
+              <button
+                type="button"
+                disabled={!disponivel}
+                onClick={() => setEtapaAtiva(etapa.numero)}
+                aria-current={ativa ? "step" : undefined}
+                className={`flex w-full items-center gap-2 rounded-xl px-2 py-2.5 text-left transition sm:px-3 ${
+                  ativa
+                    ? "bg-[rgb(var(--brand))] text-white shadow-sm dark:text-neutral-950"
+                    : disponivel
+                      ? "text-neutral-600 hover:bg-[rgb(var(--surface-subtle))] dark:text-neutral-300"
+                      : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
+                }`}
+              >
+                <span
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${ativa ? "bg-white/20" : concluida ? "bg-[rgb(var(--brand))] text-white dark:text-neutral-950" : "border border-current/25"}`}
+                >
+                  {concluida ? "✓" : etapa.numero}
+                </span>
+                <span className="hidden min-w-0 sm:block">
+                  <span className="block truncate text-xs font-bold sm:text-sm">
+                    {etapa.titulo}
+                  </span>
+                  <span
+                    className={`mt-0.5 hidden truncate text-[10px] lg:block ${ativa ? "text-white/70 dark:text-neutral-900/60" : "text-neutral-400"}`}
+                  >
+                    {etapa.descricao}
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
 
       {carregandoEmpresas ? (
         <div className="mt-6">
@@ -302,277 +448,540 @@ export default function GenerateEncartePage() {
       ) : !empresa ? (
         <div className="mt-6">
           <SecaoVazia>
-            Cadastre uma empresa em Preparação antes de gerar um encarte.
+            <span className="block font-semibold text-[rgb(var(--foreground))]">
+              Cadastre uma empresa antes de começar
+            </span>
+            <span className="mt-1 block">
+              Acesse Cadastros para configurar sua empresa, lojas e produtos.
+            </span>
           </SecaoVazia>
         </div>
       ) : (
-        <div className="mt-6 space-y-6">
-          {/* Etapa 29: primeiro passo antes de qualquer coisa - o
-              catalogo, os temas e o rodape (lojas) daqui pra baixo sao
-              todos dessa empresa. */}
-          <Card>
-            <Campo label="Empresa">
-              <Select
-                value={empresa.id}
-                onChange={(e) => {
-                  setCompanyIdEscolhido(e.target.value);
-                  // produtos ja casados pertencem ao catalogo da
-                  // empresa anterior - continuar mostrando seria
-                  // enganoso (foto/id de outro catalogo)
-                  setResultados(null);
-                }}
-              >
-                {(empresas ?? []).map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </Select>
-            </Campo>
-          </Card>
-
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="space-y-4">
+        <div className="mt-6">
+          {etapaAtiva === 1 ? (
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
               <Card>
-                <Campo label="Lista de produtos (um por linha: nome, preço e unidade)">
-                  <textarea
-                    value={texto}
-                    onChange={(e) => setTexto(e.target.value)}
-                    placeholder={PLACEHOLDER}
-                    rows={8}
-                    disabled={processando}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 outline-none transition placeholder:font-sans placeholder:text-neutral-400 focus:border-neutral-500 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                  />
-                </Campo>
-                <div className="mt-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgb(var(--accent-soft))] text-sm font-bold text-[rgb(var(--accent))]">
+                    1
+                  </span>
+                  <div>
+                    <h2 className="text-base font-bold">
+                      Adicione os produtos da oferta
+                    </h2>
+                    <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                      Cole um produto por linha, com preço e unidade. Nós
+                      encontramos as fotos no seu catálogo.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5">
+                  <Campo label="Empresa responsável pelo encarte">
+                    <Select
+                      value={empresa.id}
+                      onChange={(e) => {
+                        setCompanyIdEscolhido(e.target.value);
+                        setResultados(null);
+                        setEtapaAtiva(1);
+                        setEtapaLiberada(1);
+                      }}
+                    >
+                      {(empresas ?? []).map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Campo>
+
+                  <Campo label="Lista de produtos">
+                    <textarea
+                      value={texto}
+                      onChange={(e) => {
+                        setTexto(e.target.value);
+                        if (resultados) {
+                          setResultados(null);
+                          setEtapaLiberada(1);
+                        }
+                      }}
+                      placeholder={PLACEHOLDER}
+                      rows={10}
+                      disabled={processando}
+                      className="w-full resize-y rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] px-4 py-3 font-mono text-sm leading-relaxed text-[rgb(var(--foreground))] shadow-sm outline-none transition-all placeholder:font-sans placeholder:text-neutral-400 hover:border-[rgb(var(--brand)/0.4)] focus:border-[rgb(var(--brand))] focus:ring-4 focus:ring-[rgb(var(--brand)/0.1)] disabled:opacity-60"
+                    />
+                  </Campo>
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[rgb(var(--line))] pt-5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {linhasDigitadas
+                      ? `${linhasDigitadas} produto(s) na lista`
+                      : "Nenhum produto adicionado"}
+                  </p>
                   <Button
                     onClick={() => void processar()}
                     carregando={processando}
                   >
-                    {processando ? "Processando..." : "Processar"}
+                    {processando ? "Importando..." : "Importar produtos →"}
                   </Button>
                 </div>
               </Card>
 
-              {resultados ? (
-                <Card>
-                  <h2 className="text-sm font-semibold">
-                    Produtos reconhecidos (
-                    {resultados.filter((r) => r.escolhida).length}/
-                    {resultados.length})
-                  </h2>
-                  <ul className="mt-3 space-y-2">
-                    {resultados.map((r, i) => (
-                      <li
-                        key={i}
-                        className="rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-800"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="truncate text-neutral-500 dark:text-neutral-400">
-                            {r.linha.linhaOriginal}
-                          </span>
-                          {r.carregando ? (
-                            <span className="shrink-0 text-xs text-neutral-400">
-                              buscando...
-                            </span>
-                          ) : r.erro ? (
-                            <span className="shrink-0 text-xs text-red-600 dark:text-red-400">
-                              falha na busca
-                            </span>
-                          ) : r.escolhida ? (
-                            <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                              ✓ {r.escolhida.product.name} (
-                              {pctTexto(r.escolhida.confidence)})
-                            </span>
-                          ) : (
-                            <span className="shrink-0 text-xs font-medium text-amber-700 dark:text-amber-400">
-                              {!r.linha.preco && !r.suggestions.length
-                                ? "⚠ preço não reconhecido"
-                                : "✕ não encontrado"}
-                            </span>
-                          )}
-                        </div>
-
-                        {r.escolhida ? (
-                          <SeletorDeFoto
-                            produto={r.escolhida.product}
-                            fotoEscolhida={r.fotoEscolhida}
-                            onEscolher={(url) => escolherFoto(i, url)}
-                          />
-                        ) : null}
-
-                        {!r.carregando &&
-                        !r.escolhida &&
-                        r.suggestions.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Você quis dizer:
-                            </span>
-                            {r.suggestions.map((s) => (
-                              <button
-                                key={s.product.id}
-                                type="button"
-                                onClick={() => escolherSugestao(i, s)}
-                                className="rounded-full border border-neutral-300 px-2.5 py-0.5 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-                              >
-                                {s.product.name} ({pctTexto(s.confidence)})
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {!r.carregando &&
-                        !r.escolhida &&
-                        !r.erro &&
-                        r.suggestions.length === 0 &&
-                        r.linha.preco ? (
-                          <p className="mt-1 text-xs text-neutral-400">
-                            Nenhum produto parecido no catálogo.
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
+              <div className="space-y-4">
+                <Card className="bg-[rgb(var(--surface-subtle)/0.55)]">
+                  <p className="text-sm font-bold">Como escrever a lista</p>
+                  <div className="mt-4 rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-4 font-mono text-xs leading-7 text-neutral-500 dark:text-neutral-400">
+                    <p>Agrião 1,48 un</p>
+                    <p>Rúcula 2,50 un</p>
+                    <p>Manga Palmer 5,98 kg</p>
+                  </div>
+                  <ul className="mt-4 space-y-2 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                    <li className="flex gap-2">
+                      <span className="text-[rgb(var(--brand))]">✓</span> Use
+                      vírgula ou ponto no preço.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-[rgb(var(--brand))]">✓</span>{" "}
+                      Informe uma unidade por item.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-[rgb(var(--brand))]">✓</span> O
+                      formato atual aceita até 8 produtos.
+                    </li>
                   </ul>
                 </Card>
-              ) : null}
+              </div>
             </div>
+          ) : null}
 
-            <div className="space-y-4">
-              <Card>
-                <Campo label="Tema">
-                  <Select
-                    value={temaFamilia}
-                    onChange={(e) => setTemaFamilia(e.target.value)}
-                  >
-                    {TEMAS_DISPONIVEIS.map((t) => (
-                      <option key={t.familia} value={t.familia}>
-                        {t.nome}
-                      </option>
-                    ))}
-                  </Select>
-                </Campo>
-
-                <div className="mt-4">
-                  <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                    Formato
-                  </span>
-                  {/* Etapa 27: foco exclusivo em 8 itens - sem seletor
-                    por enquanto. O app continua sabendo gerar os
-                    outros formatos por baixo (lib/temas), so nao
-                    oferece essa escolha aqui ainda. */}
-                  <p className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-                    8 itens (fixo por enquanto)
+          {etapaAtiva === 2 && resultados ? (
+            <div className="mx-auto max-w-5xl">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    Confira os produtos encontrados
+                  </h2>
+                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                    {reconhecidos} de {resultados.length} reconhecidos. Corrija
+                    os pendentes antes de continuar.
                   </p>
                 </div>
-              </Card>
+                <span
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${reconhecidos === resultados.length ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}
+                >
+                  {reconhecidos}/{resultados.length} prontos
+                </span>
+              </div>
 
-              {resultados ? (
-                itensParaPreview.length > 0 ? (
-                  <>
-                    <Card>
-                      <h2 className="mb-3 text-sm font-semibold">
-                        Ajustar tamanhos
-                      </h2>
-                      <SizeEditor
-                        currentSizes={escalas}
-                        onSizeChange={setEscalas}
-                      />
-                    </Card>
-                    <div ref={previewRef} className="inline-block w-full">
-                      <EncartePreviewer
-                        produtos={itensParaPreview}
-                        temaId={`${temaFamilia}-${formato}`}
-                        formato={formato}
-                        lojas={lojasParaEncarte}
-                        validade={new Date().toLocaleDateString("pt-BR", {
-                          day: "2-digit",
-                          month: "2-digit",
-                        })}
-                        escalas={escalas}
-                      />
-                    </div>
-
-                    <Card>
-                      <h2 className="mb-3 text-sm font-semibold">Download</h2>
-                      <Campo label="Resolução">
-                        <Select
-                          value={resolucaoIndex}
-                          onChange={(e) =>
-                            setResolucaoIndex(Number(e.target.value))
-                          }
-                        >
-                          {RESOLUCOES.map((r, i) => (
-                            <option key={r.rotulo} value={i}>
-                              {r.rotulo}
-                            </option>
-                          ))}
-                        </Select>
-                      </Campo>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          onClick={() => void baixar("png")}
-                          disabled={exportando !== null}
-                          carregando={exportando === "png"}
-                        >
-                          {exportando === "png"
-                            ? "Gerando..."
-                            : "Download como PNG"}
-                        </Button>
-                        <Button
-                          variante="secundario"
-                          onClick={() => void baixar("jpeg")}
-                          disabled={exportando !== null}
-                          carregando={exportando === "jpeg"}
-                        >
-                          {exportando === "jpeg"
-                            ? "Gerando..."
-                            : "Download como JPG"}
-                        </Button>
+              <Card>
+                <ul className="divide-y divide-[rgb(var(--line))]">
+                  {resultados.map((r, i) => (
+                    <li key={i} className="py-4 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">
+                            {r.linha.linhaOriginal}
+                          </p>
+                          {r.escolhida ? (
+                            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                              Encontrado como: {r.escolhida.product.name}
+                            </p>
+                          ) : null}
+                        </div>
+                        {r.carregando ? (
+                          <span className="rounded-full bg-[rgb(var(--surface-subtle))] px-2.5 py-1 text-xs text-neutral-400">
+                            Buscando...
+                          </span>
+                        ) : r.erro ? (
+                          <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                            Falha na busca
+                          </span>
+                        ) : r.escolhida ? (
+                          <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            ✓ {pctTexto(r.escolhida.confidence)} compatível
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            Precisa de revisão
+                          </span>
+                        )}
                       </div>
-                      {linkPersistente ? (
-                        <p className="mt-3 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                          Link permanente:{" "}
-                          <a
-                            href={linkPersistente}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline underline-offset-4"
-                          >
-                            {linkPersistente}
-                          </a>
+
+                      {r.escolhida ? (
+                        <SeletorDeFoto
+                          produto={r.escolhida.product}
+                          fotoEscolhida={r.fotoEscolhida}
+                          onEscolher={(url) => escolherFoto(i, url)}
+                        />
+                      ) : null}
+
+                      {!r.carregando &&
+                      !r.escolhida &&
+                      r.suggestions.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Você quis dizer:
+                          </span>
+                          {r.suggestions.map((s) => (
+                            <button
+                              key={s.product.id}
+                              type="button"
+                              onClick={() => escolherSugestao(i, s)}
+                              className="rounded-full border border-[rgb(var(--line))] bg-[rgb(var(--surface-subtle))] px-3 py-1 text-xs font-medium transition hover:border-[rgb(var(--brand)/0.5)] hover:text-[rgb(var(--brand))]"
+                            >
+                              {s.product.name} · {pctTexto(s.confidence)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {!r.carregando &&
+                      !r.escolhida &&
+                      !r.erro &&
+                      r.suggestions.length === 0 ? (
+                        <p className="mt-2 text-xs text-neutral-400">
+                          Nenhum produto parecido foi encontrado no catálogo.
                         </p>
                       ) : null}
-                    </Card>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
 
-                    <Card>
-                      <h2 className="mb-3 text-sm font-semibold">Rascunho</h2>
-                      <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-                        Salva a lista, o tema/formato e os ajustes de tamanho
-                        para retomar depois em Rascunhos.
-                      </p>
-                      <Button
-                        variante="secundario"
-                        onClick={() => setMostrarSalvar(true)}
-                      >
-                        Salvar rascunho
-                      </Button>
-                    </Card>
-                  </>
-                ) : (
+              {itensParaPreview.length === 0 ? (
+                <div className="mt-4">
                   <Erro>
-                    Nenhum produto foi reconhecido ainda. Escolha uma sugestão
-                    na lista ao lado, ou ajuste a lista colada.
+                    Nenhum produto foi reconhecido. Volte e ajuste a lista ou
+                    escolha uma sugestão.
                   </Erro>
-                )
-              ) : (
-                <SecaoVazia>
-                  A pré-visualização aparece aqui depois de processar a lista.
-                </SecaoVazia>
-              )}
+                </div>
+              ) : null}
+
+              <div className="mt-5 flex flex-wrap justify-between gap-3">
+                <Button variante="secundario" onClick={() => setEtapaAtiva(1)}>
+                  ← Editar lista
+                </Button>
+                <Button
+                  disabled={itensParaPreview.length === 0}
+                  onClick={() => {
+                    setEtapaAtiva(3);
+                    setEtapaLiberada((atual) => (atual < 3 ? 3 : atual));
+                  }}
+                >
+                  Personalizar encarte →
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {etapaAtiva === 3 && itensParaPreview.length > 0 ? (
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.78fr)]">
+              <div className="space-y-5">
+                <Card>
+                  <div className="mb-5">
+                    <h2 className="text-base font-bold">Escolha o modelo</h2>
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      O modelo define cores, composição e estilo da sua oferta.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {TEMAS_DISPONIVEIS.map((tema) => {
+                      const selecionado = temaFamilia === tema.familia;
+                      return (
+                        <button
+                          key={tema.familia}
+                          type="button"
+                          onClick={() => setTemaFamilia(tema.familia)}
+                          className={`overflow-hidden rounded-2xl border-2 text-left transition ${selecionado ? "border-[rgb(var(--brand))] shadow-[0_12px_30px_-20px_rgb(var(--brand))]" : "border-[rgb(var(--line))] hover:border-[rgb(var(--brand)/0.4)]"}`}
+                        >
+                          <span className="flex h-28 items-center justify-center bg-[radial-gradient(circle_at_top,rgb(128_83_25),rgb(8_8_8)_65%)] px-4 text-center font-serif text-lg font-bold tracking-[0.14em] text-amber-300">
+                            PROMOÇÃO
+                            <br />
+                            DO DIA
+                          </span>
+                          <span className="flex items-center justify-between gap-2 bg-[rgb(var(--surface))] px-4 py-3">
+                            <span>
+                              <span className="block text-sm font-bold">
+                                Promoção do Dia
+                              </span>
+                              <span className="mt-0.5 block text-xs text-neutral-400">
+                                Preto e dourado
+                              </span>
+                            </span>
+                            <span
+                              className={`grid h-6 w-6 place-items-center rounded-full text-xs ${selecionado ? "bg-[rgb(var(--brand))] text-white dark:text-neutral-950" : "border border-[rgb(var(--line))]"}`}
+                            >
+                              {selecionado ? "✓" : ""}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                <Card>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-bold">Formato da arte</h2>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        O modelo atual está preparado para oito produtos.
+                      </p>
+                    </div>
+                    <span className="rounded-xl bg-[rgb(var(--surface-subtle))] px-4 py-2 text-sm font-bold text-[rgb(var(--brand))]">
+                      8 itens
+                    </span>
+                  </div>
+                </Card>
+
+                <Card>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-bold">
+                        Fundo personalizado
+                      </h2>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        {escalas.fundoUrl
+                          ? "Sua arte está sendo usada no lugar do fundo padrão."
+                          : "Opcional: mande sua própria arte de fundo em vez do modelo padrão."}
+                      </p>
+                    </div>
+                    {escalas.fundoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={escalas.fundoUrl}
+                        alt=""
+                        className="h-14 w-11 shrink-0 rounded-lg border border-[rgb(var(--line))] object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <label>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        disabled={enviandoFundo}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void trocarFundo(file);
+                          e.target.value = "";
+                        }}
+                      />
+                      <span className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-[rgb(var(--line))] px-4 py-2 text-sm font-semibold text-[rgb(var(--brand))] transition hover:border-[rgb(var(--brand)/0.4)]">
+                        {enviandoFundo ? <Spinner tamanho="sm" /> : null}
+                        {enviandoFundo
+                          ? "Enviando..."
+                          : escalas.fundoUrl
+                            ? "Trocar fundo"
+                            : "Enviar fundo"}
+                      </span>
+                    </label>
+                    {escalas.fundoUrl ? (
+                      <Button
+                        type="button"
+                        variante="fantasma"
+                        onClick={removerFundo}
+                        disabled={enviandoFundo}
+                      >
+                        Usar fundo padrão
+                      </Button>
+                    ) : null}
+                  </div>
+                </Card>
+
+                <Card>
+                  <h2 className="mb-1 text-base font-bold">
+                    Ajustes da composição
+                  </h2>
+                  <p className="mb-5 text-xs text-neutral-500 dark:text-neutral-400">
+                    Ajuste fotos, textos, fontes e posição acompanhando a prévia
+                    ao lado.
+                  </p>
+                  <SizeEditor
+                    currentSizes={escalas}
+                    onSizeChange={setEscalas}
+                  />
+                </Card>
+
+                <div className="flex flex-wrap justify-between gap-3">
+                  <Button
+                    variante="secundario"
+                    onClick={() => setEtapaAtiva(2)}
+                  >
+                    ← Revisar produtos
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEtapaAtiva(4);
+                      setEtapaLiberada(4);
+                    }}
+                  >
+                    Continuar para finalizar →
+                  </Button>
+                </div>
+              </div>
+
+              <aside className="lg:sticky lg:top-24">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Prévia ao vivo</p>
+                    <p className="text-xs text-neutral-400">
+                      Atualizada automaticamente
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMobileAberto(true)}
+                    className="rounded-lg border border-[rgb(var(--line))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--brand))] lg:hidden"
+                  >
+                    Ampliar
+                  </button>
+                </div>
+                <div className="rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-3 shadow-[0_22px_50px_-34px_rgb(0_0_0/0.5)]">
+                  {preview}
+                </div>
+              </aside>
+            </div>
+          ) : null}
+
+          {etapaAtiva === 4 && itensParaPreview.length > 0 ? (
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(320px,0.65fr)_minmax(0,1fr)]">
+              <div className="space-y-5 lg:sticky lg:top-24">
+                <Card>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgb(var(--accent-soft))] text-lg text-[rgb(var(--accent))]">
+                      ↓
+                    </span>
+                    <div>
+                      <h2 className="text-base font-bold">Baixar arte</h2>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Escolha a qualidade e o formato do arquivo.
+                      </p>
+                    </div>
+                  </div>
+                  <Campo label="Resolução">
+                    <Select
+                      value={resolucaoIndex}
+                      onChange={(e) =>
+                        setResolucaoIndex(Number(e.target.value))
+                      }
+                    >
+                      {RESOLUCOES.map((r, i) => (
+                        <option key={r.rotulo} value={i}>
+                          {r.rotulo}
+                        </option>
+                      ))}
+                    </Select>
+                  </Campo>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <Button
+                      onClick={() => void baixar("png")}
+                      disabled={exportando !== null}
+                      carregando={exportando === "png"}
+                    >
+                      {exportando === "png" ? "Gerando..." : "Baixar PNG"}
+                    </Button>
+                    <Button
+                      variante="secundario"
+                      onClick={() => void baixar("jpeg")}
+                      disabled={exportando !== null}
+                      carregando={exportando === "jpeg"}
+                    >
+                      {exportando === "jpeg" ? "Gerando..." : "Baixar JPG"}
+                    </Button>
+                  </div>
+                  {linkPersistente ? (
+                    <p className="mt-3 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                      Link permanente:{" "}
+                      <a
+                        href={linkPersistente}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-[rgb(var(--brand))] underline underline-offset-4"
+                      >
+                        {linkPersistente}
+                      </a>
+                    </p>
+                  ) : null}
+                </Card>
+
+                <Card>
+                  <h2 className="text-base font-bold">Continuar depois</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                    Salve a lista, as fotos e os ajustes para editar novamente
+                    em Meus encartes.
+                  </p>
+                  <Button
+                    variante="secundario"
+                    className="mt-4 w-full"
+                    onClick={() => setMostrarSalvar(true)}
+                  >
+                    Salvar em Meus encartes
+                  </Button>
+                </Card>
+
+                <Button variante="fantasma" onClick={() => setEtapaAtiva(3)}>
+                  ← Voltar aos ajustes
+                </Button>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-bold">Arte final</h2>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      Revise todos os detalhes antes de baixar.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMobileAberto(true)}
+                    className="rounded-lg border border-[rgb(var(--line))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--brand))] lg:hidden"
+                  >
+                    Ver em tela cheia
+                  </button>
+                </div>
+                <div className="rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-3 shadow-[0_22px_50px_-34px_rgb(0_0_0/0.5)]">
+                  <div ref={previewRef} className="inline-block w-full">
+                    {preview}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
+
+      {previewMobileAberto && itensParaPreview.length > 0 ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Prévia do encarte"
+          className="fixed inset-0 z-[70] overflow-y-auto bg-[rgb(var(--background)/0.98)] p-4 lg:hidden"
+        >
+          <div className="mx-auto max-w-lg">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="font-bold">Prévia do encarte</p>
+                <p className="text-xs text-neutral-400">
+                  Visualização ampliada
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewMobileAberto(false)}
+                className="grid h-10 w-10 place-items-center rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] text-xl"
+                aria-label="Fechar prévia"
+              >
+                ×
+              </button>
+            </div>
+            {preview}
+          </div>
+        </div>
+      ) : null}
 
       {mostrarSalvar && empresa ? (
         <SaveDraftModal

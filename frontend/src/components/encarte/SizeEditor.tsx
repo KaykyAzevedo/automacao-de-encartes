@@ -33,6 +33,30 @@ const CAMPOS_FONTE: {
   { chave: "fonteUnidade", rotulo: "Fonte da unidade" },
 ];
 
+const LIMITE_OFFSET = 60;
+
+// Etapa 31: posicao (empurra em px, sem mudar o tamanho da caixa) -
+// um par X/Y por elemento, independente dos outros dois.
+const CAMPOS_POSICAO: {
+  chaveX: keyof Pick<
+    EscalasTema,
+    "fotoOffsetX" | "nomeOffsetX" | "precoOffsetX"
+  >;
+  chaveY: keyof Pick<
+    EscalasTema,
+    "fotoOffsetY" | "nomeOffsetY" | "precoOffsetY"
+  >;
+  rotulo: string;
+}[] = [
+  { chaveX: "fotoOffsetX", chaveY: "fotoOffsetY", rotulo: "Posição da foto" },
+  { chaveX: "nomeOffsetX", chaveY: "nomeOffsetY", rotulo: "Posição do nome" },
+  {
+    chaveX: "precoOffsetX",
+    chaveY: "precoOffsetY",
+    rotulo: "Posição do preço",
+  },
+];
+
 export interface SizeEditorProps {
   currentSizes: EscalasTema;
   onSizeChange: (proximo: EscalasTema) => void;
@@ -74,14 +98,14 @@ export function SizeEditor({ currentSizes, onSizeChange }: SizeEditorProps) {
                     [chave]: Number(e.target.value),
                   })
                 }
-                className="w-full accent-neutral-900 dark:accent-neutral-100"
+                className="w-full accent-[rgb(var(--brand))]"
               />
             </div>
           );
         })}
       </div>
 
-      <div className="space-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+      <div className="space-y-3 border-t border-[rgb(var(--line))] pt-4">
         <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           Fonte por elemento
         </p>
@@ -104,7 +128,7 @@ export function SizeEditor({ currentSizes, onSizeChange }: SizeEditorProps) {
                     [chave]: e.target.value as FonteId,
                   })
                 }
-                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                className="w-full min-h-11 rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] px-3.5 py-2.5 text-sm text-[rgb(var(--foreground))] outline-none transition-all hover:border-[rgb(var(--brand)/0.4)] focus:border-[rgb(var(--brand))] focus:ring-4 focus:ring-[rgb(var(--brand)/0.1)]"
               >
                 {FONTES_DISPONIVEIS.map((f) => (
                   <option key={f.id} value={f.id}>
@@ -112,6 +136,100 @@ export function SizeEditor({ currentSizes, onSizeChange }: SizeEditorProps) {
                   </option>
                 ))}
               </select>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="space-y-4 border-t border-[rgb(var(--line))] pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+            Posição por elemento
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onSizeChange({
+                ...currentSizes,
+                fotoOffsetX: 0,
+                fotoOffsetY: 0,
+                nomeOffsetX: 0,
+                nomeOffsetY: 0,
+                precoOffsetX: 0,
+                precoOffsetY: 0,
+              })
+            }
+            className="text-xs font-medium text-[rgb(var(--brand))] hover:underline"
+          >
+            Restaurar
+          </button>
+        </div>
+        {CAMPOS_POSICAO.map(({ chaveX, chaveY, rotulo }) => {
+          const valorX = currentSizes[chaveX] ?? 0;
+          const valorY = currentSizes[chaveY] ?? 0;
+          return (
+            <div key={chaveX}>
+              <p className="mb-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                {rotulo}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label
+                      htmlFor={`pos-${chaveX}`}
+                      className="text-[11px] text-neutral-400"
+                    >
+                      Horizontal
+                    </label>
+                    <span className="text-[11px] font-mono tabular-nums text-neutral-400">
+                      {valorX > 0 ? `+${valorX}` : valorX}px
+                    </span>
+                  </div>
+                  <input
+                    id={`pos-${chaveX}`}
+                    type="range"
+                    min={-LIMITE_OFFSET}
+                    max={LIMITE_OFFSET}
+                    step={1}
+                    value={valorX}
+                    onChange={(e) =>
+                      onSizeChange({
+                        ...currentSizes,
+                        [chaveX]: Number(e.target.value),
+                      })
+                    }
+                    className="w-full accent-[rgb(var(--brand))]"
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label
+                      htmlFor={`pos-${chaveY}`}
+                      className="text-[11px] text-neutral-400"
+                    >
+                      Vertical
+                    </label>
+                    <span className="text-[11px] font-mono tabular-nums text-neutral-400">
+                      {valorY > 0 ? `+${valorY}` : valorY}px
+                    </span>
+                  </div>
+                  <input
+                    id={`pos-${chaveY}`}
+                    type="range"
+                    min={-LIMITE_OFFSET}
+                    max={LIMITE_OFFSET}
+                    step={1}
+                    value={valorY}
+                    onChange={(e) =>
+                      onSizeChange({
+                        ...currentSizes,
+                        [chaveY]: Number(e.target.value),
+                      })
+                    }
+                    className="w-full accent-[rgb(var(--brand))]"
+                  />
+                </div>
+              </div>
             </div>
           );
         })}

@@ -3,20 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --background: 255 255 255;
-  --foreground: 23 23 23;
+  --background: 247 248 244;
+  --foreground: 24 36 30;
+  --surface: 255 255 252;
+  --surface-subtle: 241 244 238;
+  --line: 222 228 218;
+  --brand: 28 105 76;
+  --brand-strong: 17 78 55;
+  --accent: 244 128 32;
+  --accent-soft: 255 235 214;
 
   /* Etapa 26: tokens do "liquid glass" - vidro so nas camadas
      flutuantes (header, sidebar, modal, toast, dropdown), nunca no
      conteudo solido (cards de formulario, listas). O tom do vidro e
      neutro de proposito: ele deve parecer tingido pelo que esta atras
      dele, nao por uma cor de marca propria. */
-  --glass-bg: 255 255 255;
-  --glass-bg-alpha: 0.6;
+  --glass-bg: 255 255 252;
+  --glass-bg-alpha: 0.82;
   --glass-border: 255 255 255;
   --glass-border-alpha: 0.5;
   --glass-highlight-alpha: 0.65;
-  --glass-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.12);
+  --glass-shadow: 0 12px 36px -16px rgb(24 65 45 / 0.2);
 
   --radius-glass: 1.25rem;
 
@@ -31,11 +38,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: 10 10 10;
-    --foreground: 237 237 237;
+    --background: 9 17 13;
+    --foreground: 235 242 237;
+    --surface: 15 27 21;
+    --surface-subtle: 21 36 28;
+    --line: 45 65 54;
+    --brand: 91 190 139;
+    --brand-strong: 126 215 168;
+    --accent: 255 165 76;
+    --accent-soft: 67 43 21;
 
-    --glass-bg: 24 24 27;
-    --glass-bg-alpha: 0.55;
+    --glass-bg: 15 27 21;
+    --glass-bg-alpha: 0.82;
     --glass-border: 255 255 255;
     --glass-border-alpha: 0.12;
     --glass-highlight-alpha: 0.08;
@@ -44,8 +58,47 @@
 }
 
 body {
-  background-color: rgb(var(--background));
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgb(var(--accent) / 0.07),
+      transparent 28rem
+    ),
+    rgb(var(--background));
   color: rgb(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.24);
+  color: rgb(var(--foreground));
+}
+
+* {
+  scrollbar-color: rgb(var(--line)) transparent;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 3px;
+}
+
+html {
+  scroll-padding-top: 6rem;
+}
+
+main h1 {
+  font-size: clamp(1.55rem, 2vw, 2rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+main h1 + p {
+  max-width: 42rem;
+  line-height: 1.65;
 }
 
 @layer utilities {

@@ -8,13 +8,13 @@ type Variante = "primario" | "secundario" | "perigo" | "fantasma";
 
 const ESTILOS: Record<Variante, string> = {
   primario:
-    "bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200",
+    "bg-[rgb(var(--brand))] text-white shadow-[0_8px_22px_-12px_rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] hover:shadow-[0_10px_26px_-12px_rgb(var(--brand))] dark:text-neutral-950",
   secundario:
-    "border border-neutral-300 text-neutral-800 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800",
+    "border border-[rgb(var(--line))] bg-[rgb(var(--surface))] text-[rgb(var(--foreground))] hover:border-[rgb(var(--brand)/0.4)] hover:bg-[rgb(var(--surface-subtle))]",
   perigo:
     "border border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950",
   fantasma:
-    "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100",
+    "text-neutral-600 hover:bg-[rgb(var(--surface-subtle))] hover:text-[rgb(var(--brand))] dark:text-neutral-400",
 };
 
 export function Button({
@@ -35,7 +35,7 @@ export function Button({
       {...props}
       disabled={disabled || carregando}
       aria-busy={carregando || undefined}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${ESTILOS[variante]} ${className}`}
+      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--brand))] disabled:cursor-not-allowed disabled:opacity-50 ${ESTILOS[variante]} ${className}`}
     >
       {carregando ? <Spinner tamanho="sm" /> : null}
       {children}

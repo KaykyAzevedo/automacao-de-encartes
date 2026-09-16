@@ -34,7 +34,7 @@ export function ThemeCard({
   async function excluir() {
     try {
       await remover.mutateAsync(tema.id);
-      mostrar("sucesso", `Tema "${tema.themeName}" excluído.`);
+      mostrar("sucesso", `Modelo "${tema.themeName}" excluído.`);
     } catch (err) {
       mostrar(
         "erro",
@@ -46,46 +46,50 @@ export function ThemeCard({
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{tema.themeName}</p>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {ROTULO_DIA[tema.day] ?? tema.day}
-          </p>
+    <article className="group overflow-hidden rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] shadow-[0_12px_32px_-28px_rgb(24_65_45/0.45)] transition hover:-translate-y-0.5 hover:border-[rgb(var(--brand)/0.35)] hover:shadow-[0_20px_38px_-28px_rgb(var(--brand)/0.3)]">
+      <div className="relative bg-[rgb(var(--surface-subtle))] p-4">
+        <div
+          className={`mx-auto aspect-[4/5] w-full max-w-[240px] overflow-hidden rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] shadow-sm [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover ${isLoading ? "animate-pulse" : ""}`}
+          dangerouslySetInnerHTML={
+            !isLoading && completo ? { __html: completo.format8Svg } : undefined
+          }
+        />
+        <span className="absolute left-6 top-6 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+          8 itens
+        </span>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold" title={tema.themeName}>
+              {tema.themeName}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Oferta de {ROTULO_DIA[tema.day] ?? tema.day}
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-[rgb(var(--surface-subtle))] px-2.5 py-1 text-[10px] font-semibold text-[rgb(var(--brand))]">
+            Ativo
+          </span>
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[rgb(var(--line))] pt-4">
           <Button
-            variante="fantasma"
-            className="px-2 py-1 text-xs"
+            variante="secundario"
+            className="w-full px-3 py-1.5 text-xs"
             onClick={onEditar}
           >
             Editar
           </Button>
           <Button
             variante="fantasma"
-            className="px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400"
+            className="w-full px-3 py-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400"
             disabled={remover.isPending}
             onClick={() => setConfirmando(true)}
           >
             Excluir
           </Button>
         </div>
-      </div>
-
-      {/* Etapa 27: foco exclusivo em 8 itens - so essa previa aparece
-          aqui (os outros 5 formatos continuam salvos no tema, so nao
-          sao mostrados). */}
-      <div className="mt-4 w-24">
-        <div
-          className="aspect-[4/5] overflow-hidden rounded-md border border-neutral-200 bg-neutral-50 [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover dark:border-neutral-800 dark:bg-neutral-900"
-          dangerouslySetInnerHTML={
-            !isLoading && completo ? { __html: completo.format8Svg } : undefined
-          }
-        />
-        <span className="mt-1 block text-center text-[10px] text-neutral-500 dark:text-neutral-400">
-          8 itens
-        </span>
       </div>
 
       {confirmando ? (
@@ -97,6 +101,6 @@ export function ThemeCard({
           onCancelar={() => setConfirmando(false)}
         />
       ) : null}
-    </div>
+    </article>
   );
 }

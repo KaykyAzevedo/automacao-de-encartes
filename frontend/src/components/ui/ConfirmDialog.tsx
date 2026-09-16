@@ -26,19 +26,24 @@ export function ConfirmDialog({
   const painelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const fechar = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancelar();
     };
     window.addEventListener("keydown", fechar);
-    return () => window.removeEventListener("keydown", fechar);
+    return () => {
+      window.removeEventListener("keydown", fechar);
+      document.body.style.overflow = overflowAnterior;
+    };
   }, [onCancelar]);
 
   useTravaFoco(painelRef);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         onClick={onCancelar}
         aria-hidden="true"
       />
@@ -48,9 +53,15 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-label={titulo}
         tabIndex={-1}
-        className="relative w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl outline-none dark:border-neutral-800 dark:bg-neutral-950"
+        className="relative w-full max-w-sm rounded-3xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-6 shadow-2xl outline-none"
       >
-        <h2 className="text-sm font-semibold">{titulo}</h2>
+        <span
+          className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-red-500/10 text-lg font-bold text-red-600 dark:text-red-400"
+          aria-hidden="true"
+        >
+          !
+        </span>
+        <h2 className="text-base font-bold">{titulo}</h2>
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           {descricao}
         </p>

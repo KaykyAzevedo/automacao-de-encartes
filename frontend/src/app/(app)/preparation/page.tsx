@@ -51,15 +51,55 @@ export default function PreparationPage() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold">Preparação</h1>
+      <div className="mb-7">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[rgb(var(--brand))]">
+          Configuração do negócio
+        </p>
+        <h1 className="text-lg font-semibold">Cadastros</h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Cadastre a empresa, as lojas que aparecem no rodapé do encarte e os
-          temas visuais.
+          Organize sua empresa, lojas, produtos e modelos em um só lugar.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="mb-7 grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/preparation/products"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-5 transition hover:border-[rgb(var(--brand)/0.35)]"
+        >
+          <div>
+            <p className="text-sm font-bold">Catálogo de produtos</p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Gerencie fotos e encontre produtos rapidamente.
+            </p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgb(var(--accent-soft))] text-lg text-[rgb(var(--accent))] transition group-hover:translate-x-0.5">
+            →
+          </span>
+        </Link>
+        <Link
+          href="/preparation/themes"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-5 transition hover:border-[rgb(var(--brand)/0.35)]"
+        >
+          <div>
+            <p className="text-sm font-bold">Meus modelos</p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Crie e edite as artes usadas nos encartes.
+            </p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgb(var(--surface-subtle))] text-lg text-[rgb(var(--brand))] transition group-hover:translate-x-0.5">
+            →
+          </span>
+        </Link>
+      </div>
+
+      <div className="mb-3">
+        <h2 className="text-base font-bold">Empresas e lojas</h2>
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Selecione uma empresa para visualizar e administrar seus endereços.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
         <Secao
           titulo="Empresas"
           descricao="Selecione uma para ver as lojas"
@@ -125,42 +165,6 @@ export default function PreparationPage() {
               onEditar={(l) => setFormLoja({ modo: "editar", loja: l })}
             />
           )}
-        </Secao>
-
-        <Secao
-          titulo="Temas"
-          descricao="Arte de fundo por dia da semana"
-          acao={
-            <Link
-              href="/preparation/themes"
-              className="text-xs font-medium underline underline-offset-4"
-            >
-              Gerenciar
-            </Link>
-          }
-        >
-          <SecaoVazia>
-            Cada tema tem uma arte por formato (1, 2, 4, 6, 8 e 10 itens).
-            Clique em &ldquo;Gerenciar&rdquo; para ver, criar ou editar.
-          </SecaoVazia>
-        </Secao>
-
-        <Secao
-          titulo="Produtos"
-          descricao="Fotos do banco e uploads seus"
-          acao={
-            <Link
-              href="/preparation/products"
-              className="text-xs font-medium underline underline-offset-4"
-            >
-              Gerenciar
-            </Link>
-          }
-        >
-          <SecaoVazia>
-            Cada produto pode ter fotos suas além da do banco público. Clique em
-            &ldquo;Gerenciar&rdquo; para enviar ou trocar.
-          </SecaoVazia>
         </Secao>
       </div>
     </div>

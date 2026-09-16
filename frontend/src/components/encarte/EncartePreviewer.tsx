@@ -41,16 +41,23 @@ function encontrarTema(
   temaId: string | undefined,
   escalas: EscalasTema
 ): Tema | undefined {
-  // sem escala/fonte customizada: usa o array pronto, sem reconstruir
-  // nada (Etapa 30: fonte por elemento tambem exige reconstruir, do
-  // contrario a troca de fonte seria silenciosamente ignorada aqui)
+  // sem escala/fonte/posicao/fundo customizado: usa o array pronto,
+  // sem reconstruir nada (Etapa 30/31: qualquer uma dessas mudancas
+  // exige reconstruir, do contrario ficaria silenciosamente ignorada)
   const foiCustomizado =
     escalas.foto !== 1 ||
     escalas.nome !== 1 ||
     escalas.preco !== 1 ||
     escalas.fonteNome !== ESCALA_PADRAO.fonteNome ||
     escalas.fontePreco !== ESCALA_PADRAO.fontePreco ||
-    escalas.fonteUnidade !== ESCALA_PADRAO.fonteUnidade;
+    escalas.fonteUnidade !== ESCALA_PADRAO.fonteUnidade ||
+    (escalas.fotoOffsetX ?? 0) !== 0 ||
+    (escalas.fotoOffsetY ?? 0) !== 0 ||
+    (escalas.nomeOffsetX ?? 0) !== 0 ||
+    (escalas.nomeOffsetY ?? 0) !== 0 ||
+    (escalas.precoOffsetX ?? 0) !== 0 ||
+    (escalas.precoOffsetY ?? 0) !== 0 ||
+    Boolean(escalas.fundoUrl);
 
   const lista = foiCustomizado
     ? construirTemasPromocaoDoDia(escalas)

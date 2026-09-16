@@ -3,43 +3,73 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/dashboard", rotulo: "Dashboard" },
-  { href: "/preparation", rotulo: "Preparação" },
-  { href: "/temas", rotulo: "Temas" },
-  { href: "/generate-encarte", rotulo: "Gerar encarte" },
-  { href: "/drafts", rotulo: "Rascunhos" },
-];
+import { NavIcon } from "./NavIcon";
+import { NAV_ITEMS, navItemEstaAtivo } from "./navigation";
 
 export function Sidebar() {
   const atual = usePathname();
 
   return (
-    // Etapa 26: sticky (nao mais um bloco comum) pra flutuar sobre o
-    // conteudo enquanto a pagina rola - "top-14" encosta logo abaixo
-    // do Header (h-14). self-start evita que o flex-row estique a
-    // sidebar pra altura inteira do main, o que quebraria o sticky.
-    <nav
-      aria-label="Navegação principal"
-      className="glass sticky top-14 z-30 flex gap-1 overflow-x-auto px-4 py-2 md:top-14 md:w-52 md:shrink-0 md:flex-col md:self-start md:overflow-visible md:px-3 md:py-4"
-    >
-      {LINKS.map((l) => {
-        const ativo = atual === l.href;
-        return (
-          <Link
-            key={l.href}
-            href={l.href}
-            aria-current={ativo ? "page" : undefined}
-            className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              ativo
-                ? "bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
-            }`}
-          >
-            {l.rotulo}
-          </Link>
-        );
-      })}
-    </nav>
+    <aside className="sticky top-[4.5rem] hidden h-[calc(100vh-4.5rem)] w-64 shrink-0 border-r border-[rgb(var(--line)/0.8)] bg-[rgb(var(--surface)/0.75)] px-4 py-6 backdrop-blur-xl md:block">
+      <nav aria-label="Navegação principal" className="flex h-full flex-col">
+        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+          Menu principal
+        </p>
+
+        <div className="space-y-1.5">
+          {NAV_ITEMS.map((item) => {
+            const ativo = navItemEstaAtivo(atual, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={ativo ? "page" : undefined}
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                  ativo
+                    ? "bg-[rgb(var(--brand))] text-white shadow-[0_8px_24px_-12px_rgb(var(--brand))] dark:text-neutral-950"
+                    : "text-neutral-600 hover:bg-[rgb(var(--surface-subtle))] hover:text-[rgb(var(--foreground))] dark:text-neutral-400"
+                }`}
+              >
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${
+                    ativo
+                      ? "bg-white/15 dark:bg-black/10"
+                      : item.destaque
+                        ? "bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))]"
+                        : "bg-[rgb(var(--surface-subtle))] text-neutral-500 group-hover:text-[rgb(var(--brand))]"
+                  }`}
+                >
+                  <NavIcon name={item.icon} className="h-[19px] w-[19px]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-tight">
+                    {item.rotulo}
+                  </span>
+                  <span
+                    className={`mt-0.5 block truncate text-[11px] ${
+                      ativo
+                        ? "text-white/70 dark:text-neutral-900/60"
+                        : "text-neutral-400"
+                    }`}
+                  >
+                    {item.descricao}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-auto rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface-subtle)/0.7)] p-4">
+          <div className="mb-2 flex items-center gap-2 text-[rgb(var(--brand))]">
+            <span className="h-2 w-2 rounded-full bg-[rgb(var(--accent))]" />
+            <span className="text-xs font-semibold">Dica rápida</span>
+          </div>
+          <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+            Revise produtos e lojas antes de criar uma nova arte.
+          </p>
+        </div>
+      </nav>
+    </aside>
   );
 }

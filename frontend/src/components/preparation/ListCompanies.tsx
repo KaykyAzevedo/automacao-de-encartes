@@ -55,6 +55,7 @@ export function ListCompanies({
   return (
     <>
       <ul
+        aria-busy={isFetching || undefined}
         className={`space-y-2 transition-opacity ${isFetching ? "opacity-60" : ""}`}
       >
         {data.map((empresa) => {
@@ -64,28 +65,28 @@ export function ListCompanies({
           return (
             <li key={empresa.id}>
               <div
-                role="button"
-                tabIndex={0}
-                aria-pressed={ativa}
-                onClick={() => onSelecionar(empresa)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSelecionar(empresa);
-                  }
-                }}
-                className={`cursor-pointer rounded-lg border p-3 transition ${
+                className={`flex items-center gap-2 rounded-xl border p-2 transition ${
                   excluindo ? "opacity-50" : ""
                 } ${
                   ativa
-                    ? "border-neutral-900 bg-neutral-50 dark:border-neutral-100 dark:bg-neutral-900"
-                    : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                    ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-soft))]"
+                    : "border-[rgb(var(--line))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--brand))]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <button
+                  type="button"
+                  aria-pressed={ativa}
+                  onClick={() => onSelecionar(empresa)}
+                  className="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-left"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
+                    <p className="flex items-center gap-2 truncate text-sm font-semibold">
                       {empresa.name}
+                      {ativa ? (
+                        <span className="rounded-full bg-[rgb(var(--brand))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          Selecionada
+                        </span>
+                      ) : null}
                     </p>
                     <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
                       {ROTULO_ESTILO[empresa.style]}
@@ -94,31 +95,25 @@ export function ListCompanies({
                         : null}
                     </p>
                   </div>
+                </button>
 
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      variante="fantasma"
-                      className="px-2 py-1 text-xs"
-                      disabled={remover.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditar(empresa);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variante="fantasma"
-                      className="px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400"
-                      disabled={remover.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmando(empresa);
-                      }}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    variante="fantasma"
+                    className="px-2 py-1 text-xs"
+                    disabled={remover.isPending}
+                    onClick={() => onEditar(empresa)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variante="fantasma"
+                    className="px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400"
+                    disabled={remover.isPending}
+                    onClick={() => setConfirmando(empresa)}
+                  >
+                    Excluir
+                  </Button>
                 </div>
               </div>
             </li>
@@ -129,7 +124,7 @@ export function ListCompanies({
       {confirmando ? (
         <ConfirmDialog
           titulo={`Excluir "${confirmando.name}"?`}
-          descricao="As lojas, produtos e temas desta empresa serão removidos junto. Esta ação não pode ser desfeita."
+          descricao="As lojas, produtos e modelos desta empresa serão removidos junto. Esta ação não pode ser desfeita."
           carregando={remover.isPending}
           onConfirmar={() => void excluir(confirmando)}
           onCancelar={() => setConfirmando(null)}

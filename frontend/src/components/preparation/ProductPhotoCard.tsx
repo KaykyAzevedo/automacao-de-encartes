@@ -51,28 +51,33 @@ export function ProductPhotoCard({
   }
 
   return (
-    <div className="flex flex-wrap items-start gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-      <div className="w-28 shrink-0">
-        <p className="mb-2 truncate text-sm font-medium" title={produto.name}>
-          {produto.name}
-        </p>
-        <span className="mb-1 block text-[11px] text-neutral-500 dark:text-neutral-400">
-          Foto principal
-        </span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={produto.photoS3Url}
-          alt={produto.name}
-          className="h-24 w-24 rounded border border-neutral-300 object-cover dark:border-neutral-700"
-        />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
-            Suas fotos ({produto.userPhotos.length})
+    <article className="overflow-hidden rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] shadow-[0_12px_32px_-28px_rgb(24_65_45/0.45)] transition hover:border-[rgb(var(--brand)/0.3)]">
+      <div className="flex gap-4 p-4">
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface-subtle))]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={produto.photoS3Url}
+            alt={produto.name}
+            className="h-full w-full object-cover"
+          />
+          <span className="absolute inset-x-1.5 bottom-1.5 rounded-md bg-black/65 px-1.5 py-1 text-center text-[9px] font-semibold text-white backdrop-blur-sm">
+            Foto principal
           </span>
-          <label>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold" title={produto.name}>
+            {produto.name}
+          </p>
+          <span
+            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${produto.userPhotos.length ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400" : "bg-[rgb(var(--surface-subtle))] text-neutral-500"}`}
+          >
+            {produto.userPhotos.length
+              ? `${produto.userPhotos.length} foto(s) própria(s)`
+              : "Só foto do catálogo"}
+          </span>
+
+          <label className="mt-3 inline-block">
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -84,34 +89,40 @@ export function ProductPhotoCard({
                 e.target.value = "";
               }}
             />
-            <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+            <span className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-[rgb(var(--line))] px-3 py-1.5 text-xs font-semibold transition hover:border-[rgb(var(--brand)/0.45)] hover:text-[rgb(var(--brand))]">
               {upload.isPending ? <Spinner tamanho="sm" /> : null}
-              {upload.isPending ? "Enviando..." : "+ Adicionar foto"}
+              {upload.isPending ? "Enviando..." : "+ Adicionar foto própria"}
             </span>
           </label>
         </div>
+      </div>
 
-        {produto.userPhotos.length === 0 ? (
-          <p className="text-xs text-neutral-400">Nenhum upload ainda.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
+      {produto.userPhotos.length > 0 ? (
+        <details className="group border-t border-[rgb(var(--line))]">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xs font-semibold text-neutral-500 transition hover:bg-[rgb(var(--surface-subtle)/0.55)] hover:text-[rgb(var(--brand))]">
+            <span>Ver fotos próprias</span>
+            <span className="transition-transform group-open:rotate-180">
+              ⌄
+            </span>
+          </summary>
+          <div className="flex flex-wrap gap-3 border-t border-[rgb(var(--line))] bg-[rgb(var(--surface-subtle)/0.35)] p-4">
             {produto.userPhotos.map((url) => {
               const ehPrincipal = url === produto.photoS3Url;
               return (
-                <div key={url} className="w-20 text-center">
+                <div key={url} className="w-24 text-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={url}
                     alt=""
-                    className={`h-20 w-20 rounded border object-cover ${
+                    className={`h-24 w-24 rounded-xl border-2 object-cover ${
                       ehPrincipal
-                        ? "border-emerald-500"
-                        : "border-neutral-200 dark:border-neutral-800"
+                        ? "border-[rgb(var(--brand))]"
+                        : "border-[rgb(var(--line))]"
                     }`}
                   />
                   <Button
                     variante="fantasma"
-                    className="mt-1 w-full px-1 py-0.5 text-[10px]"
+                    className="mt-1 min-h-8 w-full px-1 py-0.5 text-[10px]"
                     disabled={ehPrincipal || definirPrincipal.isPending}
                     onClick={() => void usarComoFotoPrincipal(url)}
                   >
@@ -121,8 +132,8 @@ export function ProductPhotoCard({
               );
             })}
           </div>
-        )}
-      </div>
-    </div>
+        </details>
+      ) : null}
+    </article>
   );
 }

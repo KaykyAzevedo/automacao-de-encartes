@@ -51,7 +51,7 @@ export function EditThemeModal({
 
   return (
     <Modal
-      titulo={editando ? "Editar tema" : "Novo tema"}
+      titulo={editando ? "Editar modelo" : "Novo modelo"}
       onFechar={onFechar}
       largura="max-w-3xl"
     >
@@ -132,7 +132,7 @@ function FormularioTema({
     setErroGeral(null);
 
     if (!themeName.trim()) {
-      setErroGeral("Informe o nome do tema");
+      setErroGeral("Informe o nome do modelo");
       return;
     }
     if (!svgs.format8Svg.trim()) {
@@ -163,14 +163,14 @@ function FormularioTema({
           day,
           ...svgsCompletos,
         });
-        mostrar("sucesso", `Tema "${themeName}" atualizado.`);
+        mostrar("sucesso", `Modelo "${themeName}" atualizado.`);
       } else {
         await criar.mutateAsync({
           themeName: themeName.trim(),
           day,
           ...svgsCompletos,
         });
-        mostrar("sucesso", `Tema "${themeName}" criado.`);
+        mostrar("sucesso", `Modelo "${themeName}" criado.`);
       }
       onFechar();
     } catch (err) {
@@ -189,11 +189,11 @@ function FormularioTema({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Campo label="Nome do tema">
+        <Campo label="Nome do modelo">
           <Input
             value={themeName}
             onChange={(e) => setThemeName(e.target.value)}
-            placeholder="Quartou do Empório"
+            placeholder="Ofertas de quarta-feira"
             disabled={salvando}
             autoFocus
           />
@@ -215,7 +215,7 @@ function FormularioTema({
 
       <div>
         <span className="mb-2 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-          Arte do encarte de 8 itens — SVG ou imagem (PNG/JPG vira uma prévia
+          Arte do modelo para 8 itens — SVG ou imagem (PNG/JPG gera uma prévia
           automaticamente)
         </span>
         {/* Etapa 27: foco exclusivo em 8 itens - so pede essa arte
@@ -263,7 +263,11 @@ function FormularioTema({
           disabled={enviando !== null}
           carregando={salvando}
         >
-          {salvando ? "Salvando..." : editando ? "Salvar" : "Criar tema"}
+          {salvando
+            ? "Salvando..."
+            : editando
+              ? "Salvar alterações"
+              : "Criar modelo"}
         </Button>
         <Button
           type="button"

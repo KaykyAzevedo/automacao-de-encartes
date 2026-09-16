@@ -3,7 +3,7 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes } from "react";
 
 const BASE =
-  "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-500";
+  "w-full min-h-11 rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] px-3.5 py-2.5 text-sm text-[rgb(var(--foreground))] shadow-sm outline-none transition-all placeholder:text-neutral-400 hover:border-[rgb(var(--brand)/0.4)] focus:border-[rgb(var(--brand))] focus:ring-4 focus:ring-[rgb(var(--brand)/0.1)] disabled:cursor-not-allowed disabled:bg-[rgb(var(--surface-subtle))] disabled:opacity-60";
 
 export function Campo({
   label,
@@ -16,7 +16,7 @@ export function Campo({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
+      <span className="mb-2 block text-xs font-semibold text-neutral-600 dark:text-neutral-300">
         {label}
       </span>
       {children}
@@ -29,10 +29,16 @@ export function Campo({
   );
 }
 
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={BASE} />;
+export function Input({
+  className = "",
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={`${BASE} ${className}`} />;
 }
 
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={BASE} />;
+export function Select({
+  className = "",
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={`${BASE} ${className}`} />;
 }

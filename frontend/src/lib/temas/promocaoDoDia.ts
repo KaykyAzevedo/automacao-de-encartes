@@ -20,6 +20,12 @@ interface Caixa {
 // propria fonte (independente um do outro) - ex.: nome numa serifa
 // elegante, preco numa condensada de impacto. Opcional pra nao quebrar
 // quem ja chamava isto so com foto/nome/preco (ver ESCALA_PADRAO).
+// Etapa 31: cada elemento tambem pode ser deslocado em px (alem de
+// escalado) - "empurra" sem mudar o tamanho da caixa original. E
+// tambem entra o fundo customizado: se o usuario mandar uma imagem
+// propria, o grade8 troca o fundo fixo pela dele, com layout generico
+// (ver grade8ComFundo). Tudo opcional, pra nao quebrar quem ja usava
+// isto so com foto/nome/preco.
 export interface EscalasTema {
   foto: number;
   nome: number;
@@ -27,6 +33,13 @@ export interface EscalasTema {
   fonteNome?: FonteId;
   fontePreco?: FonteId;
   fonteUnidade?: FonteId;
+  fotoOffsetX?: number;
+  fotoOffsetY?: number;
+  nomeOffsetX?: number;
+  nomeOffsetY?: number;
+  precoOffsetX?: number;
+  precoOffsetY?: number;
+  fundoUrl?: string;
 }
 
 export const ESCALA_PADRAO: EscalasTema = {
@@ -36,6 +49,12 @@ export const ESCALA_PADRAO: EscalasTema = {
   fonteNome: "serifa",
   fontePreco: "peso",
   fonteUnidade: "peso",
+  fotoOffsetX: 0,
+  fotoOffsetY: 0,
+  nomeOffsetX: 0,
+  nomeOffsetY: 0,
+  precoOffsetX: 0,
+  precoOffsetY: 0,
 };
 
 function moldura({ x, y, w, h }: Caixa, raio = 26): string {
@@ -63,7 +82,12 @@ function foto(
   n: number,
   caixa: Caixa,
   escala: number,
-  recortar = true
+  recortar = true,
+  // Etapa 31: deslocamento em px vindo do editor visual - alem do
+  // tamanho, agora da pra "empurrar" cada elemento sem mudar a caixa
+  // original (a foto ainda recorta pela caixa original, so o conteudo
+  // dela desliza por cima).
+  offset: { x: number; y: number } = { x: 0, y: 0 }
 ): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
@@ -73,8 +97,10 @@ function foto(
 
   if (!recortar) {
     return `
-  <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-    ${imagem}
+  <g transform="translate(${offset.x},${offset.y})">
+    <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
+      ${imagem}
+    </g>
   </g>`;
   }
 
@@ -82,8 +108,10 @@ function foto(
   return `
   <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/></clipPath>
   <g clip-path="url(#${clipId})">
-    <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-      ${imagem}
+    <g transform="translate(${offset.x},${offset.y})">
+      <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
+        ${imagem}
+      </g>
     </g>
   </g>`;
 }
@@ -101,17 +129,21 @@ function nome(
   escala: number,
   // Etapa 30: fonte escolhida pelo usuario pro nome do produto -
   // "serifa" (Cinzel) e o visual original, mantido como padrao.
-  fonte: FonteId = "serifa"
+  fonte: FonteId = "serifa",
+  // Etapa 31: deslocamento em px vindo do editor visual.
+  offset: { x: number; y: number } = { x: 0, y: 0 }
 ): string {
   const compLinha = Math.min(80, (bordaDir - bordaEsq) * 0.16);
   return `
-  <g transform="translate(${cx},${baseline}) scale(${escala.toFixed(3)}) translate(${-cx},${-baseline})">
-    <line x1="${bordaEsq}" y1="${baseline - 16}" x2="${bordaEsq + compLinha}" y2="${baseline - 16}"
-          stroke="url(#ouroLinha)" stroke-width="1.3"/>
-    <line x1="${bordaDir - compLinha}" y1="${baseline - 16}" x2="${bordaDir}" y2="${baseline - 16}"
-          stroke="url(#ouroLinha)" stroke-width="1.3"/>
-    <text class="${classeDaFonte(fonte)}" x="${cx}" y="${baseline}" text-anchor="middle" font-size="${tamanho}"
-          letter-spacing="2.5" fill="url(#ouro)" font-weight="700">{{ITEM_${n}_NOME}}</text>
+  <g transform="translate(${offset.x},${offset.y})">
+    <g transform="translate(${cx},${baseline}) scale(${escala.toFixed(3)}) translate(${-cx},${-baseline})">
+      <line x1="${bordaEsq}" y1="${baseline - 16}" x2="${bordaEsq + compLinha}" y2="${baseline - 16}"
+            stroke="url(#ouroLinha)" stroke-width="1.3"/>
+      <line x1="${bordaDir - compLinha}" y1="${baseline - 16}" x2="${bordaDir}" y2="${baseline - 16}"
+            stroke="url(#ouroLinha)" stroke-width="1.3"/>
+      <text class="${classeDaFonte(fonte)}" x="${cx}" y="${baseline}" text-anchor="middle" font-size="${tamanho}"
+            letter-spacing="2.5" fill="url(#ouro)" font-weight="700">{{ITEM_${n}_NOME}}</text>
+    </g>
   </g>`;
 }
 
@@ -136,7 +168,9 @@ function preco(
   // Etapa 30: fonte do "R$"+numero e da unidade, escolhidas
   // separadamente pelo usuario - "peso" (Anton) e o visual original.
   fontePreco: FonteId = "peso",
-  fonteUnidade: FonteId = "peso"
+  fonteUnidade: FonteId = "peso",
+  // Etapa 31: deslocamento em px vindo do editor visual.
+  offset: { x: number; y: number } = { x: 0, y: 0 }
 ): string {
   const { x, y, w, h } = caixa;
   const cx = x + w / 2;
@@ -146,19 +180,21 @@ function preco(
   const classePreco = classeDaFonte(fontePreco);
   const classeUnidade = classeDaFonte(fonteUnidade);
   return `
-  <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-    ${
-      comCaixa
-        ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
-          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
-        : ""
-    }
-    <text class="${classePreco}" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
-          font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
-    <text class="${classePreco}" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
-          font-size="${corpo}" fill="${corNumero}"${brilho ? ' filter="url(#brilhoSuave)"' : ""}>{{ITEM_${n}_PRECO}}</text>
-    <text class="${classeUnidade}" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
-          font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
+  <g transform="translate(${offset.x},${offset.y})">
+    <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
+      ${
+        comCaixa
+          ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
+            fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
+          : ""
+      }
+      <text class="${classePreco}" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
+            font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
+      <text class="${classePreco}" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
+            font-size="${corpo}" fill="${corNumero}"${brilho ? ' filter="url(#brilhoSuave)"' : ""}>{{ITEM_${n}_PRECO}}</text>
+      <text class="${classeUnidade}" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
+            font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
+    </g>
   </g>`;
 }
 
@@ -324,7 +360,19 @@ function nd(nativeDelta: number): number {
   return nativeDelta * ESCALA_FUNDO_CLASSICO;
 }
 
-function grade8(escalas: EscalasTema): ResultadoGrade {
+// Deslocamentos (Etapa 31) num objeto so, pra nao repetir 3x a mesma
+// leitura de escalas.*OffsetX/Y com fallback em cada chamador de
+// grade.
+function deslocamentos(escalas: EscalasTema) {
+  return {
+    foto: { x: escalas.fotoOffsetX ?? 0, y: escalas.fotoOffsetY ?? 0 },
+    nome: { x: escalas.nomeOffsetX ?? 0, y: escalas.nomeOffsetY ?? 0 },
+    preco: { x: escalas.precoOffsetX ?? 0, y: escalas.precoOffsetY ?? 0 },
+  };
+}
+
+function grade8Classico(escalas: EscalasTema): ResultadoGrade {
+  const off = deslocamentos(escalas);
   const partes: string[] = [
     `<image href="${FUNDO_CLASSICO_8_ITENS}" x="0" y="0" width="1080" height="1350"
             preserveAspectRatio="xMidYMid meet"/>`,
@@ -358,7 +406,7 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
       };
 
       partes.push(
-        foto(n, fotoCaixa, escalas.foto),
+        foto(n, fotoCaixa, escalas.foto, true, off.foto),
         // nome() padrao (linhas, sem folha) - essa versao da imagem de
         // fundo nao traz mais essa faixa pronta, ao contrario da
         // primeira que o usuario mandou
@@ -370,7 +418,8 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
           textoEsq,
           textoDir,
           escalas.nome,
-          escalas.fonteNome
+          escalas.fonteNome,
+          off.nome
         ),
         // com moldura propria agora (comCaixa=true) - a caixinha de
         // preco tambem nao vem mais pronta na imagem
@@ -383,7 +432,8 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
           false,
           true,
           escalas.fontePreco,
-          escalas.fonteUnidade
+          escalas.fonteUnidade,
+          off.preco
         )
       );
       slots.push({
@@ -430,6 +480,91 @@ function grade8(escalas: EscalasTema): ResultadoGrade {
   );
 
   return { svg: partes.join(""), slots };
+}
+
+// Etapa 31: fundo customizado - o usuario manda a propria arte de
+// fundo em vez de usar a imagem "8 itens classico". Sem calibracao
+// pixel a pixel (so e possivel pra uma imagem conhecida, como a
+// classica), entao usa uma grade generica 2x4 por cima, no mesmo
+// espirito visual das outras grades da familia (moldura dourada +
+// foto + nome + preco). O cabecalho/rodape genericos de base.ts
+// (documento()) entram por cima, prontos - a arte do usuario so
+// precisa preencher o "miolo" do encarte.
+function grade8ComFundo(
+  fundoUrl: string,
+  escalas: EscalasTema
+): ResultadoGrade {
+  const off = deslocamentos(escalas);
+  const partes: string[] = [
+    `<image href="${fundoUrl}" x="0" y="0" width="1080" height="1350"
+            preserveAspectRatio="xMidYMid slice"/>`,
+  ];
+  const slots: SlotNome[] = [];
+
+  const colunas = [52, 560];
+  const linhas = [350, 542, 734, 926];
+
+  linhas.forEach((y, li) => {
+    colunas.forEach((x, ci) => {
+      const n = li * 2 + ci + 1;
+      const card: Caixa = { x, y, w: 468, h: 176 };
+      const textoX = x + 180;
+      const cx = textoX + 134;
+
+      partes.push(
+        moldura(card, 18),
+        foto(
+          n,
+          { x: x + 14, y: y + 12, w: 150, h: 152 },
+          escalas.foto,
+          true,
+          off.foto
+        ),
+        nome(
+          n,
+          cx,
+          y + 66,
+          20,
+          textoX - 10,
+          x + 452,
+          escalas.nome,
+          escalas.fonteNome,
+          off.nome
+        ),
+        preco(
+          n,
+          { x: textoX - 10, y: y + 82, w: 284, h: 82 },
+          46,
+          escalas.preco,
+          "url(#ouro)",
+          true,
+          true,
+          escalas.fontePreco,
+          escalas.fonteUnidade,
+          off.preco
+        )
+      );
+      slots.push({
+        x: cx,
+        tamanho: 20,
+        larguraMax: x + 452 - (textoX - 10) - 16,
+        espacamento: 1.8,
+      });
+    });
+  });
+
+  return { svg: partes.join(""), slots };
+}
+
+// Ponto de entrada usado pelo resto do arquivo: sem fundo customizado,
+// comporta-se exatamente como antes (grade8Classico); com fundo
+// customizado, devolve a grade generica de grade8ComFundo(). Quem
+// decide qual wrapper usar (documento() ou documentoComFundoFixo()) e
+// montarGrade8(), mais abaixo.
+function grade8(escalas: EscalasTema): ResultadoGrade {
+  return escalas.fundoUrl
+    ? grade8ComFundo(escalas.fundoUrl, escalas)
+    : grade8Classico(escalas);
 }
 
 // ---------- 10 itens: 2 x 5, bem comprimido ----------
@@ -484,22 +619,21 @@ function montar(
   };
 }
 
-// O "8 itens classico" nao usa cabecalho()/FUNDO/RODAPE compartilhados
-// (a imagem de fundo ja traz tudo isso pronto - ver grade8()), entao
-// monta o documento direto em vez de passar por montar().
-function montarComFundoFixo(
-  id: string,
-  rotulo: string,
-  formato: number,
-  gradeFn: FuncaoGrade,
-  escalas: EscalasTema
-): Tema {
-  const grade = gradeFn(escalas);
+// Etapa 31: o "8 itens" e o unico formato cujo wrapper muda em tempo
+// de execucao - sem fundo customizado, o fundo+rodape ja vem embutido
+// na propria grade (grade8Classico), entao usa documentoComFundoFixo()
+// (nao injeta nada por cima); com fundo customizado, grade8ComFundo()
+// nao desenha o proprio rodape, entao precisa do FUNDO/RODAPE
+// genericos de base.ts (documento()) por cima da arte do usuario.
+function montarGrade8(escalas: EscalasTema): Tema {
+  const grade = grade8(escalas);
   return {
-    id,
-    nome: rotulo,
-    formato,
-    svg: documentoComFundoFixo(grade.svg),
+    id: "promocao-do-dia-8",
+    nome: "Promoção do Dia · 8 itens",
+    formato: 8,
+    svg: escalas.fundoUrl
+      ? documento(grade.svg)
+      : documentoComFundoFixo(grade.svg),
     slotsNome: grade.slots,
   };
 }
@@ -543,13 +677,7 @@ export function construirTemasPromocaoDoDia(
       grade6,
       escalas
     ),
-    montarComFundoFixo(
-      "promocao-do-dia-8",
-      "Promoção do Dia · 8 itens",
-      8,
-      grade8,
-      escalas
-    ),
+    montarGrade8(escalas),
     montar(
       "promocao-do-dia-10",
       "Promoção do Dia · 10 itens",

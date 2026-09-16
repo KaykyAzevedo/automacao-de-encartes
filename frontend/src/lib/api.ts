@@ -17,13 +17,22 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    // o cookie de sessao do NextAuth vive em localhost:3000; como o
-    // dominio e o mesmo, ele chega ao backend na 5000 com o include
-    credentials: "include",
-    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
-    ...init,
-  });
+  let res: Response;
+
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      // o cookie de sessao do NextAuth vive em localhost:3000; como o
+      // dominio e o mesmo, ele chega ao backend na 5000 com o include
+      credentials: "include",
+      headers: init?.body ? { "Content-Type": "application/json" } : undefined,
+      ...init,
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "Não foi possível conectar ao servidor. Verifique se o sistema está ativo e tente novamente."
+    );
+  }
 
   if (!res.ok) {
     const corpo = await res.json().catch(() => null);

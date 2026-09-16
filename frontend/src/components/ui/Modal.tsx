@@ -18,19 +18,24 @@ export function Modal({
   const painelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const fechar = (e: KeyboardEvent) => {
       if (e.key === "Escape") onFechar();
     };
     window.addEventListener("keydown", fechar);
-    return () => window.removeEventListener("keydown", fechar);
+    return () => {
+      window.removeEventListener("keydown", fechar);
+      document.body.style.overflow = overflowAnterior;
+    };
   }, [onFechar]);
 
   useTravaFoco(painelRef);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         onClick={onFechar}
         aria-hidden="true"
       />
@@ -40,15 +45,15 @@ export function Modal({
         aria-modal="true"
         aria-label={titulo}
         tabIndex={-1}
-        className={`relative max-h-[90vh] w-full ${largura} overflow-y-auto rounded-xl border border-neutral-200 bg-white p-6 shadow-xl outline-none dark:border-neutral-800 dark:bg-neutral-950`}
+        className={`relative max-h-[90vh] w-full ${largura} overflow-y-auto rounded-3xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-5 shadow-2xl outline-none sm:p-6`}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold">{titulo}</h2>
+          <h2 className="text-base font-bold">{titulo}</h2>
           <button
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="text-neutral-400 transition hover:text-neutral-700 dark:hover:text-neutral-200"
+            className="grid h-9 w-9 place-items-center rounded-xl text-neutral-400 transition hover:bg-[rgb(var(--surface-subtle))] hover:text-[rgb(var(--foreground))]"
           >
             ✕
           </button>

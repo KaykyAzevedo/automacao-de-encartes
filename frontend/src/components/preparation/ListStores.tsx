@@ -46,18 +46,19 @@ export function ListStores({
   return (
     <>
       <ul
+        aria-busy={isFetching || undefined}
         className={`space-y-2 transition-opacity ${isFetching ? "opacity-60" : ""}`}
       >
         {data.map((loja) => (
           <li
             key={loja.id}
-            className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
+            className="rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-3 transition hover:border-[rgb(var(--brand))]"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3">
                 {loja.logo ? <LogoPreview url={loja.logo} /> : null}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{loja.name}</p>
+                  <p className="truncate text-sm font-semibold">{loja.name}</p>
                   <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                     {loja.address}
                   </p>
