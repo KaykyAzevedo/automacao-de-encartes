@@ -5,12 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
-import {
-  FORMATOS_TEMA,
-  useRemoverTema,
-  useTheme,
-  type ThemeResumo,
-} from "@/hooks/useThemes";
+import { useRemoverTema, useTheme, type ThemeResumo } from "@/hooks/useThemes";
 
 const ROTULO_DIA: Record<string, string> = {
   segunda: "Segunda",
@@ -21,18 +16,6 @@ const ROTULO_DIA: Record<string, string> = {
   sabado: "Sábado",
   domingo: "Domingo",
 };
-
-function campoSvg(
-  formato: number
-):
-  | "format1Svg"
-  | "format2Svg"
-  | "format4Svg"
-  | "format6Svg"
-  | "format8Svg"
-  | "format10Svg" {
-  return `format${formato}Svg` as never;
-}
 
 export function ThemeCard({
   tema,
@@ -90,22 +73,19 @@ export function ThemeCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
-        {FORMATOS_TEMA.map((formato) => (
-          <div key={formato} className="text-center">
-            <div
-              className="aspect-[4/5] overflow-hidden rounded-md border border-neutral-200 bg-neutral-50 [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover dark:border-neutral-800 dark:bg-neutral-900"
-              dangerouslySetInnerHTML={
-                !isLoading && completo
-                  ? { __html: completo[campoSvg(formato)] }
-                  : undefined
-              }
-            />
-            <span className="mt-1 block text-[10px] text-neutral-500 dark:text-neutral-400">
-              {formato} {formato === 1 ? "item" : "itens"}
-            </span>
-          </div>
-        ))}
+      {/* Etapa 27: foco exclusivo em 8 itens - so essa previa aparece
+          aqui (os outros 5 formatos continuam salvos no tema, so nao
+          sao mostrados). */}
+      <div className="mt-4 w-24">
+        <div
+          className="aspect-[4/5] overflow-hidden rounded-md border border-neutral-200 bg-neutral-50 [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover dark:border-neutral-800 dark:bg-neutral-900"
+          dangerouslySetInnerHTML={
+            !isLoading && completo ? { __html: completo.format8Svg } : undefined
+          }
+        />
+        <span className="mt-1 block text-center text-[10px] text-neutral-500 dark:text-neutral-400">
+          8 itens
+        </span>
       </div>
 
       {confirmando ? (

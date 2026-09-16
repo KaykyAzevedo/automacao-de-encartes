@@ -12,16 +12,21 @@ import { TEMAS_PROMOCAO_DO_DIA } from "@/lib/temas/promocaoDoDia";
 // certo - so essa pagina de listagem ficava presa no cache).
 export const dynamic = "force-dynamic";
 
+// Etapa 27: foco exclusivo no formato de 8 itens - os outros 5
+// continuam existindo em TEMAS_PROMOCAO_DO_DIA (lib/temas), so a
+// galeria para de mostrá-los. Basta tirar o filter pra trazer de volta.
+const TEMAS_EM_FOCO = TEMAS_PROMOCAO_DO_DIA.filter((t) => t.formato === 8);
+
 export default function TemasPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-lg font-semibold">Temas</h1>
       <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        Promoção do Dia · {TEMAS_PROMOCAO_DO_DIA.length} formatos · 1080x1350
+        Promoção do Dia · 8 itens · 1080x1350
       </p>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
-        {TEMAS_PROMOCAO_DO_DIA.map((tema) => {
+        {TEMAS_EM_FOCO.map((tema) => {
           const { itens, ...dados } = exemploCom(tema.formato);
           return (
             <div key={tema.id}>

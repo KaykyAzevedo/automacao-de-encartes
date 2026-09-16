@@ -135,15 +135,25 @@ function FormularioTema({
       setErroGeral("Informe o nome do tema");
       return;
     }
-    const faltando = FORMATOS_TEMA.filter(
-      (f) => !svgs[campoDoFormato(f)].trim()
-    );
-    if (faltando.length > 0) {
-      setErroGeral(
-        `Envie a arte dos formatos: ${faltando.join(", ")} (${faltando.length > 1 ? "itens" : "item"})`
-      );
+    if (!svgs.format8Svg.trim()) {
+      setErroGeral("Envie a arte do formato de 8 itens");
       return;
     }
+
+    // Etapa 27: foco exclusivo em 8 itens - o formulario so pede essa
+    // arte, mas o Theme no banco ainda exige as 6 (schema intacto de
+    // proposito, pra nao precisar de migration quando reativarmos os
+    // outros formatos). Formato sem arte propria (nunca teve, ou este
+    // e um tema novo) reaproveita a arte de 8 itens; se o tema ja
+    // tinha arte distinta de antes desta etapa, ela e preservada.
+    const svgsCompletos: CamposSvg = FORMATOS_TEMA.reduce(
+      (acc, f) => {
+        const campo = campoDoFormato(f);
+        acc[campo] = svgs[campo].trim() || svgs.format8Svg;
+        return acc;
+      },
+      { ...svgs }
+    );
 
     try {
       if (editando && tema) {
@@ -151,11 +161,15 @@ function FormularioTema({
           id: tema.id,
           themeName: themeName.trim(),
           day,
-          ...svgs,
+          ...svgsCompletos,
         });
         mostrar("sucesso", `Tema "${themeName}" atualizado.`);
       } else {
-        await criar.mutateAsync({ themeName: themeName.trim(), day, ...svgs });
+        await criar.mutateAsync({
+          themeName: themeName.trim(),
+          day,
+          ...svgsCompletos,
+        });
         mostrar("sucesso", `Tema "${themeName}" criado.`);
       }
       onFechar();
@@ -201,51 +215,43 @@ function FormularioTema({
 
       <div>
         <span className="mb-2 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-          Arte por formato — SVG ou imagem (PNG/JPG vira uma prévia
+          Arte do encarte de 8 itens — SVG ou imagem (PNG/JPG vira uma prévia
           automaticamente)
         </span>
-        <div className="grid grid-cols-3 gap-3">
-          {FORMATOS_TEMA.map((formato) => {
-            const campo = campoDoFormato(formato);
-            const conteudo = svgs[campo];
-            return (
-              <div
-                key={formato}
-                className="rounded-lg border border-neutral-200 p-2 dark:border-neutral-800"
-              >
-                <div
-                  className="mb-2 aspect-[4/5] overflow-hidden rounded border border-dashed border-neutral-300 bg-neutral-50 [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover dark:border-neutral-700 dark:bg-neutral-900"
-                  dangerouslySetInnerHTML={
-                    conteudo ? { __html: conteudo } : undefined
-                  }
-                />
-                <p className="mb-1 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
-                  {formato} {formato === 1 ? "item" : "itens"}
-                </p>
-                <label className="block">
-                  <input
-                    type="file"
-                    accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    disabled={salvando || enviando === formato}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void tratarArquivo(formato, file);
-                      e.target.value = "";
-                    }}
-                  />
-                  <span className="flex cursor-pointer items-center justify-center gap-1 rounded border border-neutral-300 px-2 py-1 text-center text-[11px] transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
-                    {enviando === formato ? <Spinner tamanho="sm" /> : null}
-                    {enviando === formato
-                      ? "Enviando..."
-                      : conteudo
-                        ? "Trocar"
-                        : "Enviar"}
-                  </span>
-                </label>
-              </div>
-            );
-          })}
+        {/* Etapa 27: foco exclusivo em 8 itens - so pede essa arte
+            aqui; os outros 5 formatos do Theme sao preenchidos por
+            baixo dos panos no salvar() (ver comentario la). */}
+        <div className="max-w-[180px] rounded-lg border border-neutral-200 p-2 dark:border-neutral-800">
+          <div
+            className="mb-2 aspect-[4/5] overflow-hidden rounded border border-dashed border-neutral-300 bg-neutral-50 [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:object-cover dark:border-neutral-700 dark:bg-neutral-900"
+            dangerouslySetInnerHTML={
+              svgs.format8Svg ? { __html: svgs.format8Svg } : undefined
+            }
+          />
+          <p className="mb-1 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+            8 itens
+          </p>
+          <label className="block">
+            <input
+              type="file"
+              accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={salvando || enviando === 8}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void tratarArquivo(8, file);
+                e.target.value = "";
+              }}
+            />
+            <span className="flex cursor-pointer items-center justify-center gap-1 rounded border border-neutral-300 px-2 py-1 text-center text-[11px] transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+              {enviando === 8 ? <Spinner tamanho="sm" /> : null}
+              {enviando === 8
+                ? "Enviando..."
+                : svgs.format8Svg
+                  ? "Trocar"
+                  : "Enviar"}
+            </span>
+          </label>
         </div>
       </div>
 

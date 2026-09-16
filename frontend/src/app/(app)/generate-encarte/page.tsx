@@ -32,7 +32,11 @@ const TEMAS_DISPONIVEIS = [
   { familia: "promocao-do-dia", nome: "Promoção do Dia (preto e dourado)" },
 ];
 
-const FORMATOS: FormatoEncarte[] = [1, 2, 4, 6, 8, 10];
+// Etapa 27: foco exclusivo no formato de 8 itens - os outros (1, 2, 4,
+// 6, 10) continuam existindo em lib/temas/promocaoDoDia.ts e no schema
+// do Theme (banco), so saem da UI. Reativar e so trazer o seletor de
+// volta.
+const FORMATO_UNICO: FormatoEncarte = 8;
 
 interface LinhaResultado {
   linha: LinhaProcessada;
@@ -83,7 +87,7 @@ export default function GenerateEncartePage() {
   const [resultados, setResultados] = useState<LinhaResultado[] | null>(null);
 
   const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
-  const [formato, setFormato] = useState<FormatoEncarte>(4);
+  const [formato, setFormato] = useState<FormatoEncarte>(FORMATO_UNICO);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [mostrarSalvar, setMostrarSalvar] = useState(false);
 
@@ -416,28 +420,13 @@ export default function GenerateEncartePage() {
                 <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   Formato
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {FORMATOS.map((f) => (
-                    <label
-                      key={f}
-                      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition ${
-                        formato === f
-                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
-                          : "border-neutral-300 hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="formato"
-                        value={f}
-                        checked={formato === f}
-                        onChange={() => setFormato(f)}
-                        className="sr-only"
-                      />
-                      {f} {f === 1 ? "item" : "itens"}
-                    </label>
-                  ))}
-                </div>
+                {/* Etapa 27: foco exclusivo em 8 itens - sem seletor
+                    por enquanto. O app continua sabendo gerar os
+                    outros formatos por baixo (lib/temas), so nao
+                    oferece essa escolha aqui ainda. */}
+                <p className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+                  8 itens (fixo por enquanto)
+                </p>
               </div>
             </Card>
 

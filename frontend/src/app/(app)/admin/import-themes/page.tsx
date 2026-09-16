@@ -8,23 +8,14 @@ import { Campo, Input, Select } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { DIAS_SEMANA, type DiaSemana } from "@/hooks/useThemes";
-import {
-  importarTemplateTema,
-  type ArquivosTemplate,
-} from "@/lib/importarTemplateTema";
+import { importarTemplateTema } from "@/lib/importarTemplateTema";
 
-// Etapa 25: pagina de teste pra converter os PNGs dos temas 1 e 2 (ou
-// qualquer outro) direto em Theme, sem precisar mexer em código - so
-// escolher a empresa, dar um nome, escolher os PNGs e enviar. Formatos
-// que faltarem (incluindo 2 e 6, fora do pedido original) reaproveitam
-// a arte do formato mais próximo já enviado - avisado na resposta.
-const CAMPOS_FORMATO = [
-  { campo: "format1", rotulo: "1 item" },
-  { campo: "format4", rotulo: "4 itens" },
-  { campo: "format8", rotulo: "8 itens" },
-  { campo: "format10", rotulo: "10 itens" },
-] as const;
-
+// Etapa 25: pagina de teste pra converter o PNG de um tema direto em
+// Theme, sem precisar mexer em código. Etapa 27: foco exclusivo em 8
+// itens - o formulario so pede esse formato agora; os outros 5 do
+// Theme continuam existindo no banco (schema intacto) e sao
+// preenchidos com a mesma arte de 8 itens por baixo dos panos (ver
+// backend/src/controllers/themeTemplate.controller.ts).
 export default function ImportThemesPage() {
   const { data: empresas, isLoading: carregandoEmpresas } = useCompanies();
   const { mostrar } = useToast();
@@ -32,18 +23,17 @@ export default function ImportThemesPage() {
   const [companyId, setCompanyId] = useState("");
   const [themeName, setThemeName] = useState("");
   const [day, setDay] = useState<DiaSemana>("segunda");
-  const [arquivos, setArquivos] = useState<ArquivosTemplate>({});
+  const [arquivo, setArquivo] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<number[] | null>(null);
+  const [sucesso, setSucesso] = useState(false);
 
   const empresaPadrao = empresas?.[0];
   const companyIdEfetivo = companyId || empresaPadrao?.id || "";
-  const temPeloMenosUmArquivo = Object.values(arquivos).some(Boolean);
 
   async function enviar() {
     setErro(null);
-    setResultado(null);
+    setSucesso(false);
 
     if (!companyIdEfetivo) {
       setErro("Selecione uma empresa.");
@@ -53,23 +43,23 @@ export default function ImportThemesPage() {
       setErro("Dê um nome ao tema.");
       return;
     }
-    if (!temPeloMenosUmArquivo) {
-      setErro("Escolha ao menos um PNG.");
+    if (!arquivo) {
+      setErro("Escolha o PNG de fundo.");
       return;
     }
 
     setEnviando(true);
     try {
-      const resposta = await importarTemplateTema({
+      await importarTemplateTema({
         companyId: companyIdEfetivo,
         themeName: themeName.trim(),
         day,
-        arquivos,
+        arquivos: { format8: arquivo },
       });
-      setResultado(resposta.formatosComArtePropria);
+      setSucesso(true);
       mostrar("sucesso", `Tema "${themeName.trim()}" criado.`);
       setThemeName("");
-      setArquivos({});
+      setArquivo(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao importar";
       setErro(msg);
@@ -79,18 +69,12 @@ export default function ImportThemesPage() {
     }
   }
 
-  const formatosSemArte = [1, 2, 4, 6, 8, 10].filter(
-    (f) => resultado && !resultado.includes(f)
-  );
-
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-lg font-semibold">Importar templates de tema</h1>
+      <h1 className="text-lg font-semibold">Importar template de tema</h1>
       <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        Página de teste (Etapa 25): sobe os PNGs de fundo de um tema e já cria o
-        registro no banco, sem precisar desenhar SVG na mão. Formatos não
-        enviados (incluindo 2 e 6 itens) reaproveitam a arte do formato mais
-        próximo, como aviso temporário até chegar a arte definitiva.
+        Página de teste: sobe o PNG de fundo do encarte de 8 itens e já cria o
+        registro no banco, sem precisar desenhar SVG na mão.
       </p>
 
       <Card className="mt-6 space-y-4">
@@ -138,41 +122,21 @@ export default function ImportThemesPage() {
           </Select>
         </Campo>
 
-        <div>
-          <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-            PNGs por formato (escolha ao menos um)
-          </span>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {CAMPOS_FORMATO.map(({ campo, rotulo }) => (
-              <label key={campo} className="block">
-                <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-                  {rotulo}
-                </span>
-                <input
-                  type="file"
-                  accept="image/png"
-                  disabled={enviando}
-                  onChange={(e) =>
-                    setArquivos((atual) => ({
-                      ...atual,
-                      [campo]: e.target.files?.[0] ?? null,
-                    }))
-                  }
-                  className="block w-full text-xs file:mr-2 file:rounded-lg file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs dark:file:border-neutral-700 dark:file:bg-neutral-900"
-                />
-              </label>
-            ))}
-          </div>
-        </div>
+        <Campo label="PNG de fundo (8 itens)">
+          <input
+            type="file"
+            accept="image/png"
+            disabled={enviando}
+            onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+            className="block w-full text-xs file:mr-2 file:rounded-lg file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs dark:file:border-neutral-700 dark:file:bg-neutral-900"
+          />
+        </Campo>
 
         {erro ? <Erro>{erro}</Erro> : null}
 
-        {resultado ? (
+        {sucesso ? (
           <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-            Criado com arte própria em: {resultado.join(", ")} item(ns).
-            {formatosSemArte.length > 0
-              ? ` Ainda emprestando arte de outro formato em: ${formatosSemArte.join(", ")} item(ns).`
-              : ""}
+            Tema criado com a arte de 8 itens.
           </p>
         ) : null}
 
