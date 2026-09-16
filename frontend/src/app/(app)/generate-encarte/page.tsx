@@ -14,6 +14,7 @@ import { SkeletonLista } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useEncarte } from "@/hooks/useEncartes";
+import { useStores } from "@/hooks/useStores";
 import {
   baixarBlob,
   exportarEncarte,
@@ -54,21 +55,6 @@ Rúcula 2,50 un
 Abobora Sergipana 3,98 kg
 Manga Palmer 5,98 kg`;
 
-// Lojas e validade fixas por enquanto: a etapa de ligar o encarte as
-// lojas cadastradas (Etapa 6) e a proxima depois desta integracao.
-const LOJAS_PADRAO = [
-  {
-    nome: "FREGUESIA",
-    endereco: "ESTRADA DO BANANAL, 477",
-    whatsapp: "(21) 97384-7640",
-  },
-  {
-    nome: "BARRA DA TIJUCA",
-    endereco: "RUA GILDÁSIO AMADO, 55 - LOJA A",
-    whatsapp: "(21) 97510-3253",
-  },
-];
-
 function pctTexto(confidence: number) {
   return `${Math.round(confidence * 100)}%`;
 }
@@ -76,6 +62,13 @@ function pctTexto(confidence: number) {
 export default function GenerateEncartePage() {
   const { data: empresas, isLoading: carregandoEmpresas } = useCompanies();
   const { mostrar } = useToast();
+
+  // Etapa 29: antes de qualquer coisa, o usuario escolhe pra qual
+  // empresa esta gerando - isso decide o catalogo de produtos, os
+  // temas e as lojas do rodape. "" ate o usuario mexer = cai no
+  // fallback (primeira empresa), sem precisar de useEffect so pra
+  // sincronizar o valor inicial do <Select>.
+  const [companyIdEscolhido, setCompanyIdEscolhido] = useState("");
 
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draftId");
@@ -96,7 +89,19 @@ export default function GenerateEncartePage() {
   const [exportando, setExportando] = useState<FormatoArquivo | null>(null);
   const [linkPersistente, setLinkPersistente] = useState<string | null>(null);
 
-  const empresa = empresas?.[0];
+  const empresa =
+    empresas?.find((e) => e.id === companyIdEscolhido) ?? empresas?.[0];
+
+  // Etapa 29: rodape do encarte com dado real da loja, em vez do
+  // LOJAS_PADRAO fixo que existia antes (nomes nem batiam com o
+  // cadastro real). Sem loja cadastrada ainda, os placeholders de
+  // loja no SVG so ficam vazios (ver frontend/src/lib/temas/render.ts).
+  const { data: lojasDaEmpresa } = useStores(empresa?.id ?? null);
+  const lojasParaEncarte = (lojasDaEmpresa ?? []).map((loja) => ({
+    nome: loja.name.toUpperCase(),
+    endereco: loja.address.toUpperCase(),
+    whatsapp: loja.deliveryPhones.join(" / "),
+  }));
 
   // Abrir um rascunho (Etapa 20, "?draftId=..." vindo de /drafts):
   // preenche os campos e reprocessa a lista contra o catalogo atual -
@@ -295,244 +300,270 @@ export default function GenerateEncartePage() {
           </SecaoVazia>
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="space-y-4">
-            <Card>
-              <Campo label="Lista de produtos (um por linha: nome, preço e unidade)">
-                <textarea
-                  value={texto}
-                  onChange={(e) => setTexto(e.target.value)}
-                  placeholder={PLACEHOLDER}
-                  rows={8}
-                  disabled={processando}
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 outline-none transition placeholder:font-sans placeholder:text-neutral-400 focus:border-neutral-500 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                />
-              </Campo>
-              <div className="mt-3">
-                <Button
-                  onClick={() => void processar()}
-                  carregando={processando}
-                >
-                  {processando ? "Processando..." : "Processar"}
-                </Button>
-              </div>
-            </Card>
+        <div className="mt-6 space-y-6">
+          {/* Etapa 29: primeiro passo antes de qualquer coisa - o
+              catalogo, os temas e o rodape (lojas) daqui pra baixo sao
+              todos dessa empresa. */}
+          <Card>
+            <Campo label="Empresa">
+              <Select
+                value={empresa.id}
+                onChange={(e) => {
+                  setCompanyIdEscolhido(e.target.value);
+                  // produtos ja casados pertencem ao catalogo da
+                  // empresa anterior - continuar mostrando seria
+                  // enganoso (foto/id de outro catalogo)
+                  setResultados(null);
+                }}
+              >
+                {(empresas ?? []).map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+              </Select>
+            </Campo>
+          </Card>
 
-            {resultados ? (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="space-y-4">
               <Card>
-                <h2 className="text-sm font-semibold">
-                  Produtos reconhecidos (
-                  {resultados.filter((r) => r.escolhida).length}/
-                  {resultados.length})
-                </h2>
-                <ul className="mt-3 space-y-2">
-                  {resultados.map((r, i) => (
-                    <li
-                      key={i}
-                      className="rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-800"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="truncate text-neutral-500 dark:text-neutral-400">
-                          {r.linha.linhaOriginal}
-                        </span>
-                        {r.carregando ? (
-                          <span className="shrink-0 text-xs text-neutral-400">
-                            buscando...
-                          </span>
-                        ) : r.erro ? (
-                          <span className="shrink-0 text-xs text-red-600 dark:text-red-400">
-                            falha na busca
-                          </span>
-                        ) : r.escolhida ? (
-                          <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                            ✓ {r.escolhida.product.name} (
-                            {pctTexto(r.escolhida.confidence)})
-                          </span>
-                        ) : (
-                          <span className="shrink-0 text-xs font-medium text-amber-700 dark:text-amber-400">
-                            {!r.linha.preco && !r.suggestions.length
-                              ? "⚠ preço não reconhecido"
-                              : "✕ não encontrado"}
-                          </span>
-                        )}
-                      </div>
-
-                      {r.escolhida ? (
-                        <SeletorDeFoto
-                          produto={r.escolhida.product}
-                          fotoEscolhida={r.fotoEscolhida}
-                          onEscolher={(url) => escolherFoto(i, url)}
-                        />
-                      ) : null}
-
-                      {!r.carregando &&
-                      !r.escolhida &&
-                      r.suggestions.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Você quis dizer:
-                          </span>
-                          {r.suggestions.map((s) => (
-                            <button
-                              key={s.product.id}
-                              type="button"
-                              onClick={() => escolherSugestao(i, s)}
-                              className="rounded-full border border-neutral-300 px-2.5 py-0.5 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
-                            >
-                              {s.product.name} ({pctTexto(s.confidence)})
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {!r.carregando &&
-                      !r.escolhida &&
-                      !r.erro &&
-                      r.suggestions.length === 0 &&
-                      r.linha.preco ? (
-                        <p className="mt-1 text-xs text-neutral-400">
-                          Nenhum produto parecido no catálogo.
-                        </p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
+                <Campo label="Lista de produtos (um por linha: nome, preço e unidade)">
+                  <textarea
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    placeholder={PLACEHOLDER}
+                    rows={8}
+                    disabled={processando}
+                    className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 outline-none transition placeholder:font-sans placeholder:text-neutral-400 focus:border-neutral-500 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                  />
+                </Campo>
+                <div className="mt-3">
+                  <Button
+                    onClick={() => void processar()}
+                    carregando={processando}
+                  >
+                    {processando ? "Processando..." : "Processar"}
+                  </Button>
+                </div>
               </Card>
-            ) : null}
-          </div>
 
-          <div className="space-y-4">
-            <Card>
-              <Campo label="Tema">
-                <Select
-                  value={temaFamilia}
-                  onChange={(e) => setTemaFamilia(e.target.value)}
-                >
-                  {TEMAS_DISPONIVEIS.map((t) => (
-                    <option key={t.familia} value={t.familia}>
-                      {t.nome}
-                    </option>
-                  ))}
-                </Select>
-              </Campo>
+              {resultados ? (
+                <Card>
+                  <h2 className="text-sm font-semibold">
+                    Produtos reconhecidos (
+                    {resultados.filter((r) => r.escolhida).length}/
+                    {resultados.length})
+                  </h2>
+                  <ul className="mt-3 space-y-2">
+                    {resultados.map((r, i) => (
+                      <li
+                        key={i}
+                        className="rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-800"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="truncate text-neutral-500 dark:text-neutral-400">
+                            {r.linha.linhaOriginal}
+                          </span>
+                          {r.carregando ? (
+                            <span className="shrink-0 text-xs text-neutral-400">
+                              buscando...
+                            </span>
+                          ) : r.erro ? (
+                            <span className="shrink-0 text-xs text-red-600 dark:text-red-400">
+                              falha na busca
+                            </span>
+                          ) : r.escolhida ? (
+                            <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                              ✓ {r.escolhida.product.name} (
+                              {pctTexto(r.escolhida.confidence)})
+                            </span>
+                          ) : (
+                            <span className="shrink-0 text-xs font-medium text-amber-700 dark:text-amber-400">
+                              {!r.linha.preco && !r.suggestions.length
+                                ? "⚠ preço não reconhecido"
+                                : "✕ não encontrado"}
+                            </span>
+                          )}
+                        </div>
 
-              <div className="mt-4">
-                <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  Formato
-                </span>
-                {/* Etapa 27: foco exclusivo em 8 itens - sem seletor
+                        {r.escolhida ? (
+                          <SeletorDeFoto
+                            produto={r.escolhida.product}
+                            fotoEscolhida={r.fotoEscolhida}
+                            onEscolher={(url) => escolherFoto(i, url)}
+                          />
+                        ) : null}
+
+                        {!r.carregando &&
+                        !r.escolhida &&
+                        r.suggestions.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                              Você quis dizer:
+                            </span>
+                            {r.suggestions.map((s) => (
+                              <button
+                                key={s.product.id}
+                                type="button"
+                                onClick={() => escolherSugestao(i, s)}
+                                className="rounded-full border border-neutral-300 px-2.5 py-0.5 text-xs transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                              >
+                                {s.product.name} ({pctTexto(s.confidence)})
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {!r.carregando &&
+                        !r.escolhida &&
+                        !r.erro &&
+                        r.suggestions.length === 0 &&
+                        r.linha.preco ? (
+                          <p className="mt-1 text-xs text-neutral-400">
+                            Nenhum produto parecido no catálogo.
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              ) : null}
+            </div>
+
+            <div className="space-y-4">
+              <Card>
+                <Campo label="Tema">
+                  <Select
+                    value={temaFamilia}
+                    onChange={(e) => setTemaFamilia(e.target.value)}
+                  >
+                    {TEMAS_DISPONIVEIS.map((t) => (
+                      <option key={t.familia} value={t.familia}>
+                        {t.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </Campo>
+
+                <div className="mt-4">
+                  <span className="mb-1.5 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                    Formato
+                  </span>
+                  {/* Etapa 27: foco exclusivo em 8 itens - sem seletor
                     por enquanto. O app continua sabendo gerar os
                     outros formatos por baixo (lib/temas), so nao
                     oferece essa escolha aqui ainda. */}
-                <p className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-                  8 itens (fixo por enquanto)
-                </p>
-              </div>
-            </Card>
+                  <p className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+                    8 itens (fixo por enquanto)
+                  </p>
+                </div>
+              </Card>
 
-            {resultados ? (
-              itensParaPreview.length > 0 ? (
-                <>
-                  <Card>
-                    <h2 className="mb-3 text-sm font-semibold">
-                      Ajustar tamanhos
-                    </h2>
-                    <SizeEditor
-                      currentSizes={escalas}
-                      onSizeChange={setEscalas}
-                    />
-                  </Card>
-                  <div ref={previewRef} className="inline-block w-full">
-                    <EncartePreviewer
-                      produtos={itensParaPreview}
-                      temaId={`${temaFamilia}-${formato}`}
-                      formato={formato}
-                      lojas={LOJAS_PADRAO}
-                      validade={new Date().toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                      })}
-                      escalas={escalas}
-                    />
-                  </div>
+              {resultados ? (
+                itensParaPreview.length > 0 ? (
+                  <>
+                    <Card>
+                      <h2 className="mb-3 text-sm font-semibold">
+                        Ajustar tamanhos
+                      </h2>
+                      <SizeEditor
+                        currentSizes={escalas}
+                        onSizeChange={setEscalas}
+                      />
+                    </Card>
+                    <div ref={previewRef} className="inline-block w-full">
+                      <EncartePreviewer
+                        produtos={itensParaPreview}
+                        temaId={`${temaFamilia}-${formato}`}
+                        formato={formato}
+                        lojas={lojasParaEncarte}
+                        validade={new Date().toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })}
+                        escalas={escalas}
+                      />
+                    </div>
 
-                  <Card>
-                    <h2 className="mb-3 text-sm font-semibold">Download</h2>
-                    <Campo label="Resolução">
-                      <Select
-                        value={resolucaoIndex}
-                        onChange={(e) =>
-                          setResolucaoIndex(Number(e.target.value))
-                        }
-                      >
-                        {RESOLUCOES.map((r, i) => (
-                          <option key={r.rotulo} value={i}>
-                            {r.rotulo}
-                          </option>
-                        ))}
-                      </Select>
-                    </Campo>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        onClick={() => void baixar("png")}
-                        disabled={exportando !== null}
-                        carregando={exportando === "png"}
-                      >
-                        {exportando === "png"
-                          ? "Gerando..."
-                          : "Download como PNG"}
-                      </Button>
+                    <Card>
+                      <h2 className="mb-3 text-sm font-semibold">Download</h2>
+                      <Campo label="Resolução">
+                        <Select
+                          value={resolucaoIndex}
+                          onChange={(e) =>
+                            setResolucaoIndex(Number(e.target.value))
+                          }
+                        >
+                          {RESOLUCOES.map((r, i) => (
+                            <option key={r.rotulo} value={i}>
+                              {r.rotulo}
+                            </option>
+                          ))}
+                        </Select>
+                      </Campo>
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          onClick={() => void baixar("png")}
+                          disabled={exportando !== null}
+                          carregando={exportando === "png"}
+                        >
+                          {exportando === "png"
+                            ? "Gerando..."
+                            : "Download como PNG"}
+                        </Button>
+                        <Button
+                          variante="secundario"
+                          onClick={() => void baixar("jpeg")}
+                          disabled={exportando !== null}
+                          carregando={exportando === "jpeg"}
+                        >
+                          {exportando === "jpeg"
+                            ? "Gerando..."
+                            : "Download como JPG"}
+                        </Button>
+                      </div>
+                      {linkPersistente ? (
+                        <p className="mt-3 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                          Link permanente:{" "}
+                          <a
+                            href={linkPersistente}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline underline-offset-4"
+                          >
+                            {linkPersistente}
+                          </a>
+                        </p>
+                      ) : null}
+                    </Card>
+
+                    <Card>
+                      <h2 className="mb-3 text-sm font-semibold">Rascunho</h2>
+                      <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
+                        Salva a lista, o tema/formato e os ajustes de tamanho
+                        para retomar depois em Rascunhos.
+                      </p>
                       <Button
                         variante="secundario"
-                        onClick={() => void baixar("jpeg")}
-                        disabled={exportando !== null}
-                        carregando={exportando === "jpeg"}
+                        onClick={() => setMostrarSalvar(true)}
                       >
-                        {exportando === "jpeg"
-                          ? "Gerando..."
-                          : "Download como JPG"}
+                        Salvar rascunho
                       </Button>
-                    </div>
-                    {linkPersistente ? (
-                      <p className="mt-3 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                        Link permanente:{" "}
-                        <a
-                          href={linkPersistente}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline underline-offset-4"
-                        >
-                          {linkPersistente}
-                        </a>
-                      </p>
-                    ) : null}
-                  </Card>
-
-                  <Card>
-                    <h2 className="mb-3 text-sm font-semibold">Rascunho</h2>
-                    <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-                      Salva a lista, o tema/formato e os ajustes de tamanho para
-                      retomar depois em Rascunhos.
-                    </p>
-                    <Button
-                      variante="secundario"
-                      onClick={() => setMostrarSalvar(true)}
-                    >
-                      Salvar rascunho
-                    </Button>
-                  </Card>
-                </>
+                    </Card>
+                  </>
+                ) : (
+                  <Erro>
+                    Nenhum produto foi reconhecido ainda. Escolha uma sugestão
+                    na lista ao lado, ou ajuste a lista colada.
+                  </Erro>
+                )
               ) : (
-                <Erro>
-                  Nenhum produto foi reconhecido ainda. Escolha uma sugestão na
-                  lista ao lado, ou ajuste a lista colada.
-                </Erro>
-              )
-            ) : (
-              <SecaoVazia>
-                A pré-visualização aparece aqui depois de processar a lista.
-              </SecaoVazia>
-            )}
+                <SecaoVazia>
+                  A pré-visualização aparece aqui depois de processar a lista.
+                </SecaoVazia>
+              )}
+            </div>
           </div>
         </div>
       )}
