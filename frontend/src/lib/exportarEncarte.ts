@@ -1,4 +1,4 @@
-import { getFontEmbedCSS, toCanvas } from "html-to-image";
+import { toCanvas } from "html-to-image";
 
 export type FormatoArquivo = "png" | "jpeg";
 
@@ -51,6 +51,82 @@ function larguraNativa(elemento: HTMLElement): number {
   return Number(svg?.getAttribute("width")) || elemento.offsetWidth;
 }
 
+// html-to-image's getFontEmbedCSS() so detecta fontes "em uso"
+// percorrendo filhos que sao HTMLElement - qualquer texto dentro do
+// <svg> do tema (ex.: o preco, que usa uma fonte so ali) fica invisivel
+// pra essa deteccao e nunca e embutido, saindo no PNG final com uma
+// fonte generica do sistema mesmo com a pre-visualizacao correta na
+// tela. Corrigimos isso fazendo nossa propria varredura (que cobre
+// SVGElement, nao so HTMLElement) pra achar as familias realmente em
+// uso dentro do elemento exportado, e embutindo so as @font-face
+// correspondentes - embutir as ~60 regras do documento inteiro (todas
+// as fontes/pesos carregados no app) gera um CSS multi-megabyte que
+// trava o carregamento da imagem final via data URI.
+function familiasEmUso(elemento: HTMLElement): Set<string> {
+  const familias = new Set<string>();
+  const todos = [elemento, ...Array.from(elemento.querySelectorAll("*"))];
+  for (const no of todos) {
+    const fontFamily = getComputedStyle(no).fontFamily;
+    fontFamily
+      .split(",")
+      .forEach((f) => familias.add(f.trim().replace(/["']/g, "")));
+  }
+  return familias;
+}
+
+async function construirFontEmbedCSS(elemento: HTMLElement): Promise<string> {
+  const usadas = familiasEmUso(elemento);
+  const regras: string[] = [];
+  for (const sheet of Array.from(document.styleSheets)) {
+    let cssRules: CSSRuleList | null = null;
+    try {
+      cssRules = sheet.cssRules;
+    } catch {
+      continue;
+    }
+    if (!cssRules) continue;
+    for (const rule of Array.from(cssRules)) {
+      if (
+        rule instanceof CSSFontFaceRule &&
+        usadas.has(
+          rule.style.getPropertyValue("font-family").trim().replace(/["']/g, "")
+        )
+      ) {
+        regras.push(rule.cssText);
+      }
+    }
+  }
+
+  const regexUrl = /url\(["']?([^"')]+)["']?\)/g;
+  const comFontesEmbutidas = await Promise.all(
+    regras.map(async (cssText) => {
+      const urls = Array.from(cssText.matchAll(regexUrl)).map((m) => m[1]);
+      let resultado = cssText;
+      for (const url of urls) {
+        if (url.startsWith("data:")) continue;
+        try {
+          const absoluta = new URL(url, window.location.href).href;
+          const resposta = await fetch(absoluta);
+          const blob = await resposta.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const leitor = new FileReader();
+            leitor.onload = () => resolve(leitor.result as string);
+            leitor.onerror = () => reject(leitor.error);
+            leitor.readAsDataURL(blob);
+          });
+          resultado = resultado.replace(url, dataUrl);
+        } catch {
+          // se uma fonte especifica falhar ao baixar, segue sem ela em
+          // vez de derrubar a exportacao inteira
+        }
+      }
+      return resultado;
+    })
+  );
+
+  return comFontesEmbutidas.join("\n");
+}
+
 // Rasteriza o elemento (o encarte tal como esta na tela) num canvas,
 // direto no navegador - sem Puppeteer, sem round-trip ao servidor.
 // html-to-image cuida de inlinar as fotos e as fontes do Google Fonts
@@ -64,15 +140,10 @@ export async function exportarEncarte(
   const pixelRatio =
     elemento.offsetWidth > 0 ? nativa / elemento.offsetWidth : 1;
 
-  // Gerar o CSS das fontes A PARTE (em vez de deixar o toCanvas
-  // detectar sozinho) evita uma falha silenciosa observada no tema com
-  // imagem de fundo grande (8 itens "classico"): o download saia com
-  // uma fonte generica do sistema em vez da fonte certa, mesmo com a
-  // pre-visualizacao na tela correta. Calculando antes, como um passo
-  // proprio, o html-to-image nao precisa competir a deteccao de fontes
-  // com o trabalho de embutir uma imagem de fundo grande na mesma
-  // chamada.
-  const fontEmbedCSS = await comTimeout(getFontEmbedCSS(elemento), TIMEOUT_MS);
+  const fontEmbedCSS = await comTimeout(
+    construirFontEmbedCSS(elemento),
+    TIMEOUT_MS
+  );
 
   const canvasOrigem = await comTimeout(
     toCanvas(elemento, {
