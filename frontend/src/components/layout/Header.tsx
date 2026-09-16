@@ -14,7 +14,10 @@ export function Header({
   mostrarLogout?: boolean;
 }) {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 md:px-6 dark:border-neutral-800">
+    // Etapa 26: primeira superficie de vidro real do app. sticky+z
+    // pra flutuar sobre o conteudo que rola por baixo - sem isso o
+    // blur nao tem nada atras pra desfocar de verdade.
+    <header className="glass sticky top-0 z-40 flex h-14 items-center justify-between gap-4 px-4 md:px-6">
       <span className="text-sm font-semibold tracking-tight">
         Encarte Gerador
       </span>

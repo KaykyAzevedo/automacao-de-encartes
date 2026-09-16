@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import { classesDeFonte } from "@/lib/fontes";
 
 import "./globals.css";
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={classesDeFonte}>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <MotionProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </MotionProvider>
       </body>
     </html>
   );

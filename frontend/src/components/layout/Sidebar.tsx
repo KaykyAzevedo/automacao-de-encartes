@@ -15,9 +15,13 @@ export function Sidebar() {
   const atual = usePathname();
 
   return (
+    // Etapa 26: sticky (nao mais um bloco comum) pra flutuar sobre o
+    // conteudo enquanto a pagina rola - "top-14" encosta logo abaixo
+    // do Header (h-14). self-start evita que o flex-row estique a
+    // sidebar pra altura inteira do main, o que quebraria o sticky.
     <nav
       aria-label="Navegação principal"
-      className="flex gap-1 overflow-x-auto border-b border-neutral-200 px-4 py-2 md:h-full md:w-52 md:shrink-0 md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-3 md:py-4 dark:border-neutral-800"
+      className="glass sticky top-14 z-30 flex gap-1 overflow-x-auto px-4 py-2 md:top-14 md:w-52 md:shrink-0 md:flex-col md:self-start md:overflow-visible md:px-3 md:py-4"
     >
       {LINKS.map((l) => {
         const ativo = atual === l.href;

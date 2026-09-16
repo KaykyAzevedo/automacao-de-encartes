@@ -2,6 +2,7 @@ import {
   Anton,
   Caveat,
   Cinzel,
+  Inter,
   Montserrat,
   Pinyon_Script,
 } from "next/font/google";
@@ -43,10 +44,22 @@ export const fonteMao = Caveat({
   display: "swap",
 });
 
+// Etapa 26: fonte da INTERFACE do app (botoes, menus, textos de tela)
+// - nao confundir com as fontes acima, usadas so dentro dos templates
+// SVG do encarte em si (lib/temas/base.ts). Aplicada globalmente via
+// tailwind.config.ts (theme.fontFamily.sans), nao precisa de classe
+// manual em cada componente.
+export const fonteInterface = Inter({
+  subsets: ["latin"],
+  variable: "--fonte-interface",
+  display: "swap",
+});
+
 export const classesDeFonte = [
   fonteScript.variable,
   fonteSerifa.variable,
   fontePeso.variable,
   fonteSans.variable,
   fonteMao.variable,
+  fonteInterface.variable,
 ].join(" ");
