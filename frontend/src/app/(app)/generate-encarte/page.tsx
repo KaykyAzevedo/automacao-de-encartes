@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
+import { FundoPersonalizadoCard } from "@/components/encarte/FundoPersonalizadoCard";
 import { SaveDraftModal } from "@/components/encarte/SaveDraftModal";
 import { SeletorDeFoto } from "@/components/encarte/SeletorDeFoto";
 import { SizeEditor } from "@/components/encarte/SizeEditor";
@@ -11,7 +12,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, Erro, SecaoVazia } from "@/components/ui/Card";
 import { Campo, Select } from "@/components/ui/Input";
 import { SkeletonLista } from "@/components/ui/Skeleton";
-import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useEncarte } from "@/hooks/useEncartes";
@@ -24,7 +24,11 @@ import {
 } from "@/lib/exportarEncarte";
 import { matchProduct, type ResultadoMatch } from "@/lib/match";
 import { parsearLista, type LinhaProcessada } from "@/lib/parserLista";
-import { ESCALA_PADRAO, type EscalasTema } from "@/lib/temas/promocaoDoDia";
+import {
+  ESCALA_PADRAO,
+  escalasComPadrao,
+  type EscalasTema,
+} from "@/lib/temas/promocaoDoDia";
 import { uploadArquivo } from "@/lib/upload";
 import type { FormatoEncarte } from "@/types";
 
@@ -113,10 +117,6 @@ export default function GenerateEncartePage() {
   const [formato, setFormato] = useState<FormatoEncarte>(FORMATO_UNICO);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [mostrarSalvar, setMostrarSalvar] = useState(false);
-  // Etapa 31: fundo customizado - so o estado de "enviando" fica aqui;
-  // a URL em si mora em escalas.fundoUrl (assim salva/restaura junto
-  // com o resto do rascunho, sem precisar de um campo novo no backend).
-  const [enviandoFundo, setEnviandoFundo] = useState(false);
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [resolucaoIndex, setResolucaoIndex] = useState(0);
@@ -136,6 +136,18 @@ export default function GenerateEncartePage() {
     endereco: loja.address.toUpperCase(),
     whatsapp: loja.deliveryPhones.join(" / "),
   }));
+
+  // Etapa 33: assim que a empresa carrega pela primeira vez, aplica o
+  // "modelo padrao" dela (editado fora daqui, em Modelos > Ajustes) em
+  // vez de sempre comecar do ESCALA_PADRAO do sistema. So roda uma vez
+  // no carregamento - abrir um rascunho (efeito abaixo) ou trocar de
+  // empresa (Select de empresa, mais abaixo) tomam conta depois disso.
+  const [modeloPadraoAplicado, setModeloPadraoAplicado] = useState(false);
+  useEffect(() => {
+    if (!empresa || modeloPadraoAplicado || draftId) return;
+    setEscalas(escalasComPadrao(empresa.defaultEscalas));
+    setModeloPadraoAplicado(true);
+  }, [empresa, modeloPadraoAplicado, draftId]);
 
   // Abrir um rascunho (Etapa 20, "?draftId=..." vindo de /drafts):
   // preenche os campos e reprocessa a lista contra o catalogo atual -
@@ -285,32 +297,6 @@ export default function GenerateEncartePage() {
     } finally {
       setExportando(null);
     }
-  }
-
-  // Etapa 31: fundo customizado - sobe pelo endpoint generico de
-  // upload (mesmo usado pro link permanente do download) e aplica em
-  // escalas.fundoUrl. Sem calibracao pixel a pixel como a arte
-  // classica: usa uma grade generica por cima (ver grade8ComFundo em
-  // lib/temas/promocaoDoDia.ts) - por isso os controles de posicao do
-  // SizeEditor ajudam a encaixar o resultado na arte de cada um.
-  async function trocarFundo(file: File) {
-    setEnviandoFundo(true);
-    try {
-      const url = await uploadArquivo(file);
-      setEscalas((atual) => ({ ...atual, fundoUrl: url }));
-      mostrar("sucesso", "Fundo personalizado aplicado.");
-    } catch (err) {
-      mostrar(
-        "erro",
-        err instanceof Error ? err.message : "Falha ao enviar o fundo"
-      );
-    } finally {
-      setEnviandoFundo(false);
-    }
-  }
-
-  function removerFundo() {
-    setEscalas((atual) => ({ ...atual, fundoUrl: undefined }));
   }
 
   function escolherSugestao(indice: number, sugestao: ResultadoMatch) {
@@ -485,6 +471,15 @@ export default function GenerateEncartePage() {
                         setResultados(null);
                         setEtapaAtiva(1);
                         setEtapaLiberada(1);
+                        // Etapa 33: cada empresa tem seu proprio
+                        // modelo padrao - troca de empresa, troca a
+                        // base de fonte/tamanho/posicao/fundo tambem.
+                        const novaEmpresa = empresas?.find(
+                          (emp) => emp.id === e.target.value
+                        );
+                        setEscalas(
+                          escalasComPadrao(novaEmpresa?.defaultEscalas)
+                        );
                       }}
                     >
                       {(empresas ?? []).map((e) => (
@@ -735,61 +730,12 @@ export default function GenerateEncartePage() {
                   </div>
                 </Card>
 
-                <Card>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="text-base font-bold">
-                        Fundo personalizado
-                      </h2>
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        {escalas.fundoUrl
-                          ? "Sua arte está sendo usada no lugar do fundo padrão."
-                          : "Opcional: mande sua própria arte de fundo em vez do modelo padrão."}
-                      </p>
-                    </div>
-                    {escalas.fundoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={escalas.fundoUrl}
-                        alt=""
-                        className="h-14 w-11 shrink-0 rounded-lg border border-[rgb(var(--line))] object-cover"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <label>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="sr-only"
-                        disabled={enviandoFundo}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) void trocarFundo(file);
-                          e.target.value = "";
-                        }}
-                      />
-                      <span className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-[rgb(var(--line))] px-4 py-2 text-sm font-semibold text-[rgb(var(--brand))] transition hover:border-[rgb(var(--brand)/0.4)]">
-                        {enviandoFundo ? <Spinner tamanho="sm" /> : null}
-                        {enviandoFundo
-                          ? "Enviando..."
-                          : escalas.fundoUrl
-                            ? "Trocar fundo"
-                            : "Enviar fundo"}
-                      </span>
-                    </label>
-                    {escalas.fundoUrl ? (
-                      <Button
-                        type="button"
-                        variante="fantasma"
-                        onClick={removerFundo}
-                        disabled={enviandoFundo}
-                      >
-                        Usar fundo padrão
-                      </Button>
-                    ) : null}
-                  </div>
-                </Card>
+                <FundoPersonalizadoCard
+                  fundoUrl={escalas.fundoUrl}
+                  onFundoChange={(url) =>
+                    setEscalas((atual) => ({ ...atual, fundoUrl: url }))
+                  }
+                />
 
                 <Card>
                   <h2 className="mb-1 text-base font-bold">

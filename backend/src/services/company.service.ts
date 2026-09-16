@@ -1,3 +1,4 @@
+import { Prisma } from "../generated/prisma/client";
 import { naoEncontrado } from "../lib/errors";
 import { prisma } from "../lib/prisma";
 import type {
@@ -39,7 +40,24 @@ export const companyService = {
 
   async atualizar(userId: string, id: string, dados: AtualizarCompanyInput) {
     await this.garantirPropriedade(userId, id);
-    return prisma.company.update({ where: { id }, data: dados });
+    // Etapa 33: defaultEscalas e Json nullable - precisa do sentinel
+    // Prisma.JsonNull pra "resetar" (null puro e ambiguo pro Prisma:
+    // "nao mudar o campo" vs "JSON null"), e de um cast pro tipo que
+    // o client espera quando tem valor de verdade (mesma situacao ja
+    // resolvida em encarteDraft.service.ts).
+    const { defaultEscalas, ...resto } = dados;
+    return prisma.company.update({
+      where: { id },
+      data: {
+        ...resto,
+        ...(defaultEscalas !== undefined && {
+          defaultEscalas:
+            defaultEscalas === null
+              ? Prisma.JsonNull
+              : (defaultEscalas as Prisma.InputJsonValue),
+        }),
+      },
+    });
   },
 
   async remover(userId: string, id: string) {

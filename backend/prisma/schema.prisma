@@ -44,6 +44,13 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Etapa 33: "modelo padrao" do encarte de 8 itens desta empresa -
+  // mesmo formato de EscalasTema (frontend/src/lib/temas/promocaoDoDia.ts):
+  // fundo customizado, fonte/tamanho/posicao por elemento. Editado na
+  // aba "Ajustes" de Modelos, fora do fluxo diario de Gerar Encarte;
+  // null = usa o padrao do sistema (ESCALA_PADRAO).
+  defaultEscalas Json?
+
   stores   Store[]
   products Product[]
   themes   Theme[]

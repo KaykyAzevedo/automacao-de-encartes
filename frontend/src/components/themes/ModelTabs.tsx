@@ -1,9 +1,21 @@
 import Link from "next/link";
 
-export function ModelTabs({ ativo }: { ativo: "galeria" | "meus" }) {
+// Etapa 33: terceira aba "Ajustes" - o modelo padrao do encarte de 8
+// itens por empresa (fundo, fontes, tamanhos, posicoes), editado fora
+// do fluxo diario de Gerar Encarte.
+export function ModelTabs({
+  ativo,
+}: {
+  ativo: "galeria" | "meus" | "ajustes";
+}) {
   const itens = [
     { id: "galeria" as const, href: "/temas", label: "Galeria de modelos" },
     { id: "meus" as const, href: "/preparation/themes", label: "Meus modelos" },
+    {
+      id: "ajustes" as const,
+      href: "/temas/editor",
+      label: "Ajustes do modelo",
+    },
   ];
 
   return (

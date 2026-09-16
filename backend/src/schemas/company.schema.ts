@@ -22,6 +22,11 @@ export const atualizarCompanySchema = z
       .optional(),
     style: z.enum(ESTILOS).optional(),
     logo: z.string().url("logo deve ser uma URL válida").nullish(),
+    // Etapa 33: "modelo padrao" do encarte de 8 itens - mesmo formato
+    // livre de EncarteDraft.edits (o frontend e quem sabe o formato
+    // real, EscalasTema); aqui so garante que e um objeto serializavel.
+    // null "reseta" pro padrao do sistema.
+    defaultEscalas: z.record(z.string(), z.unknown()).nullish(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: "envie ao menos um campo para atualizar",

@@ -57,6 +57,33 @@ export const ESCALA_PADRAO: EscalasTema = {
   precoOffsetY: 0,
 };
 
+// Etapa 33: mescla um "modelo padrao" salvo (Company.defaultEscalas,
+// formato solto no backend - json qualquer) com ESCALA_PADRAO, campo a
+// campo - usado tanto ao abrir Gerar Encarte com uma empresa que ja
+// tem modelo salvo quanto no editor do modelo em si. `fonte` vazio/
+// null (empresa sem modelo salvo ainda) cai inteiro no padrao do
+// sistema.
+export function escalasComPadrao(
+  fonte: Record<string, unknown> | null | undefined
+): EscalasTema {
+  const f = (fonte ?? {}) as Partial<EscalasTema>;
+  return {
+    foto: f.foto ?? ESCALA_PADRAO.foto,
+    nome: f.nome ?? ESCALA_PADRAO.nome,
+    preco: f.preco ?? ESCALA_PADRAO.preco,
+    fonteNome: f.fonteNome ?? ESCALA_PADRAO.fonteNome,
+    fontePreco: f.fontePreco ?? ESCALA_PADRAO.fontePreco,
+    fonteUnidade: f.fonteUnidade ?? ESCALA_PADRAO.fonteUnidade,
+    fotoOffsetX: f.fotoOffsetX ?? ESCALA_PADRAO.fotoOffsetX,
+    fotoOffsetY: f.fotoOffsetY ?? ESCALA_PADRAO.fotoOffsetY,
+    nomeOffsetX: f.nomeOffsetX ?? ESCALA_PADRAO.nomeOffsetX,
+    nomeOffsetY: f.nomeOffsetY ?? ESCALA_PADRAO.nomeOffsetY,
+    precoOffsetX: f.precoOffsetX ?? ESCALA_PADRAO.precoOffsetX,
+    precoOffsetY: f.precoOffsetY ?? ESCALA_PADRAO.precoOffsetY,
+    fundoUrl: f.fundoUrl,
+  };
+}
+
 function moldura({ x, y, w, h }: Caixa, raio = 26): string {
   return `
   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${raio}"

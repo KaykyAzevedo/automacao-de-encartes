@@ -6,6 +6,10 @@ export interface Company {
   name: string;
   style: EstiloEmpresa;
   logo: string | null;
+  // Etapa 33: "modelo padrao" do encarte de 8 itens desta empresa -
+  // mesmo formato de EscalasTema (lib/temas/promocaoDoDia.ts), guardado
+  // solto porque o schema real mora no frontend, nao no backend.
+  defaultEscalas?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   _count?: { stores: number; products: number; themes: number };

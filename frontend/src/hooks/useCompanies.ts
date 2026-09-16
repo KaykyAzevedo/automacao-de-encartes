@@ -40,6 +40,23 @@ export function useAtualizarEmpresa() {
   });
 }
 
+// Etapa 33: salva/reseta o "modelo padrao" da empresa - separado de
+// useAtualizarEmpresa porque esse so mexe em defaultEscalas, sem
+// exigir name/style (DadosEmpresa os torna obrigatorios).
+export function useAtualizarModeloPadrao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      defaultEscalas,
+    }: {
+      id: string;
+      defaultEscalas: Record<string, unknown> | null;
+    }) => api.put<Company>(`/api/companies/${id}`, { defaultEscalas }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: chavesEmpresa.todas }),
+  });
+}
+
 export function useRemoverEmpresa() {
   const qc = useQueryClient();
   return useMutation({
