@@ -26,10 +26,41 @@ export function FormStore({
 
   const [name, setName] = useState(loja?.name ?? "");
   const [address, setAddress] = useState(loja?.address ?? "");
-  const [deliveryPhone, setDeliveryPhone] = useState(loja?.deliveryPhone ?? "");
+  // Etapa 28: lista de numeros em vez de um so. Sempre comeca com pelo
+  // menos uma linha (vazia se a loja ainda nao tem nenhum numero) pra
+  // o botao de "+ Adicionar numero" nao ser a unica forma de ver o
+  // campo.
+  const [phones, setPhones] = useState<string[]>(
+    loja?.deliveryPhones.length ? loja.deliveryPhones : [""]
+  );
   const [logo, setLogo] = useState(loja?.logo ?? "");
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string | null>(null);
+
+  const MAX_TELEFONES = 5;
+
+  function alterarTelefone(indice: number, valor: string) {
+    setPhones((atual) => atual.map((p, i) => (i === indice ? valor : p)));
+    // erro de validacao por item vem como "deliveryPhones.0", "...1"
+    // etc (path do zod) - limpa qualquer um deles, nao so a chave exata
+    setErros((atual) => {
+      const chaves = Object.keys(atual).filter((k) =>
+        k.startsWith("deliveryPhones")
+      );
+      if (chaves.length === 0) return atual;
+      const copia = { ...atual };
+      chaves.forEach((k) => delete copia[k]);
+      return copia;
+    });
+  }
+
+  function removerTelefone(indice: number) {
+    setPhones((atual) => atual.filter((_, i) => i !== indice));
+  }
+
+  function adicionarTelefone() {
+    setPhones((atual) => [...atual, ""]);
+  }
 
   const criar = useCriarLoja(companyId);
   const atualizar = useAtualizarLoja(companyId);
@@ -50,10 +81,14 @@ export function FormStore({
     e.preventDefault();
     setErroGeral(null);
 
+    // linhas vazias (o "+ Adicionar numero" sem preencher) nao contam
+    // como numero de verdade - filtra antes de validar
+    const telefonesPreenchidos = phones.map((p) => p.trim()).filter(Boolean);
+
     const analise = lojaSchema.safeParse({
       name,
       address,
-      deliveryPhone,
+      deliveryPhones: telefonesPreenchidos,
       logo,
     });
     if (!analise.success) {
@@ -65,9 +100,7 @@ export function FormStore({
     const dados = {
       name: analise.data.name,
       address: analise.data.address,
-      deliveryPhone: analise.data.deliveryPhone?.trim()
-        ? analise.data.deliveryPhone.trim()
-        : null,
+      deliveryPhones: analise.data.deliveryPhones,
       logo: analise.data.logo?.trim() ? analise.data.logo.trim() : null,
     };
 
@@ -122,16 +155,47 @@ export function FormStore({
         />
       </Campo>
 
-      <Campo label="WhatsApp do delivery (opcional)" erro={erros.deliveryPhone}>
-        <Input
-          value={deliveryPhone}
-          onChange={(e) => {
-            setDeliveryPhone(e.target.value);
-            limpaErro("deliveryPhone");
-          }}
-          placeholder="(21) 97384-7640"
-          disabled={salvando}
-        />
+      <Campo
+        label="Números de contato (opcional)"
+        erro={
+          Object.entries(erros).find(([k]) =>
+            k.startsWith("deliveryPhones")
+          )?.[1]
+        }
+      >
+        <div className="space-y-2">
+          {phones.map((telefone, i) => (
+            <div key={i} className="flex gap-2">
+              <Input
+                value={telefone}
+                onChange={(e) => alterarTelefone(i, e.target.value)}
+                placeholder="(21) 97384-7640"
+                disabled={salvando}
+              />
+              <Button
+                type="button"
+                variante="fantasma"
+                className="shrink-0 px-2"
+                disabled={salvando}
+                onClick={() => removerTelefone(i)}
+                aria-label="Remover este número"
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+        </div>
+        {phones.length < MAX_TELEFONES ? (
+          <Button
+            type="button"
+            variante="secundario"
+            className="mt-2 px-3 py-1.5 text-xs"
+            disabled={salvando}
+            onClick={adicionarTelefone}
+          >
+            + Adicionar número
+          </Button>
+        ) : null}
       </Campo>
 
       <Campo label="URL do logo da loja (opcional)" erro={erros.logo}>

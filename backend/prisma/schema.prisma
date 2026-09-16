@@ -51,15 +51,19 @@ model Company {
 }
 
 model Store {
-  id            String   @id @default(cuid())
-  companyId     String
-  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name          String
-  address       String
-  logo          String?
-  deliveryPhone String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  address   String
+  logo      String?
+  // Etapa 28: uma loja pode divulgar mais de um numero (ex.: WhatsApp
+  // de delivery + fixo). Era um unico campo (deliveryPhone); a
+  // migration desta etapa converte o valor existente pro primeiro
+  // item da lista.
+  deliveryPhones String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Theme {

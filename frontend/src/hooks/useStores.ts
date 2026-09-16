@@ -13,7 +13,7 @@ export const chavesLoja = {
 export interface DadosLoja {
   name: string;
   address: string;
-  deliveryPhone?: string | null;
+  deliveryPhones?: string[];
   logo?: string | null;
 }
 

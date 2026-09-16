@@ -19,6 +19,18 @@ export const empresaSchema = z.object({
     .nullish(),
 });
 
+// Etapa 28: uma loja pode ter mais de um numero (WhatsApp de
+// delivery, fixo, etc) - o form ja manda so os preenchidos e sem
+// espacos nas pontas (ver FormStore), entao aqui e so validar o
+// formato de cada um.
+const telefoneUnico = z
+  .string()
+  .trim()
+  .regex(
+    /^[0-9()+\-\s]{8,20}$/,
+    "Use apenas números, espaços, parênteses, + e -"
+  );
+
 export const lojaSchema = z.object({
   name: z
     .string()
@@ -30,15 +42,7 @@ export const lojaSchema = z.object({
     .trim()
     .min(1, "Informe o endereço")
     .max(255, "No máximo 255 caracteres"),
-  deliveryPhone: z
-    .string()
-    .trim()
-    .regex(
-      /^[0-9()+\-\s]{8,20}$/,
-      "Use apenas números, espaços, parênteses, + e -"
-    )
-    .or(z.literal(""))
-    .nullish(),
+  deliveryPhones: z.array(telefoneUnico).max(5, "No máximo 5 números por loja"),
   logo: z
     .string()
     .trim()

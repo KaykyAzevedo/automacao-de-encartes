@@ -61,9 +61,9 @@ export function ListStores({
                   <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                     {loja.address}
                   </p>
-                  {loja.deliveryPhone ? (
+                  {loja.deliveryPhones.length > 0 ? (
                     <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      WhatsApp: {loja.deliveryPhone}
+                      Contato: {loja.deliveryPhones.join(" · ")}
                     </p>
                   ) : null}
                 </div>

@@ -6,8 +6,15 @@ const telefone = z
   .trim()
   .regex(
     /^[0-9()+\-\s]{8,20}$/,
-    "deliveryPhone deve conter apenas números, espaços, parênteses, + e -"
+    "cada número deve conter apenas números, espaços, parênteses, + e -"
   );
+
+// Etapa 28: uma loja pode divulgar mais de um numero (WhatsApp de
+// delivery, fixo, etc) - por isso uma lista, nao mais um campo unico.
+const listaDeTelefones = z
+  .array(telefone)
+  .max(5, "no máximo 5 números por loja")
+  .default([]);
 
 export const criarStoreSchema = z.object({
   companyId: z
@@ -24,7 +31,7 @@ export const criarStoreSchema = z.object({
     .trim()
     .min(1, "address não pode ser vazio")
     .max(255, "address deve ter no máximo 255 caracteres"),
-  deliveryPhone: telefone.nullish(),
+  deliveryPhones: listaDeTelefones,
   logo: z.string().url("logo deve ser uma URL válida").nullish(),
 });
 
@@ -42,7 +49,7 @@ export const atualizarStoreSchema = z
       .min(1, "address não pode ser vazio")
       .max(255)
       .optional(),
-    deliveryPhone: telefone.nullish(),
+    deliveryPhones: listaDeTelefones.optional(),
     logo: z.string().url("logo deve ser uma URL válida").nullish(),
   })
   .refine((d) => Object.keys(d).length > 0, {

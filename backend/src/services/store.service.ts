@@ -13,7 +13,7 @@ export const storeService = {
     return prisma.store.create({
       data: {
         ...dados,
-        deliveryPhone: dados.deliveryPhone ?? null,
+        deliveryPhones: dados.deliveryPhones ?? [],
         logo: dados.logo ?? null,
         companyId,
       },

@@ -17,7 +17,9 @@ export interface Store {
   name: string;
   address: string;
   logo: string | null;
-  deliveryPhone: string | null;
+  // Etapa 28: uma loja pode ter mais de um numero (WhatsApp de
+  // delivery, fixo, etc) - era um campo unico antes desta etapa.
+  deliveryPhones: string[];
   createdAt: string;
   updatedAt: string;
 }
