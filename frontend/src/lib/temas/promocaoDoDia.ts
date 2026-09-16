@@ -173,28 +173,32 @@ function preco(
   offset: { x: number; y: number } = { x: 0, y: 0 }
 ): string {
   const { x, y, w, h } = caixa;
-  const cx = x + w / 2;
-  const cy = y + h / 2;
   const meio = y + h / 2;
   const ajusteFino = corpo * 0.06;
   const classePreco = classeDaFonte(fontePreco);
   const classeUnidade = classeDaFonte(fonteUnidade);
+  // Etapa 32: "escala" agora so cresce o NUMERO do preco, no proprio
+  // centro dele - a caixa, o "R$" e a unidade ficam no tamanho normal
+  // (antes o <g> escalava tudo junto, entao aumentar o preco tambem
+  // esticava a caixinha inteira, que era o bug reportado).
+  const numX = x + w * 0.53;
+  const numY = meio - ajusteFino;
   return `
   <g transform="translate(${offset.x},${offset.y})">
-    <g transform="translate(${cx},${cy}) scale(${escala.toFixed(3)}) translate(${-cx},${-cy})">
-      ${
-        comCaixa
-          ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
-            fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
-          : ""
-      }
-      <text class="${classePreco}" x="${x + w * 0.09}" y="${meio - ajusteFino}" dominant-baseline="central"
-            font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
-      <text class="${classePreco}" x="${x + w * 0.53}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="middle"
+    ${
+      comCaixa
+        ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"
+          fill="#0b0b0b" stroke="url(#molduraCard)" stroke-width="2.2"/>`
+        : ""
+    }
+    <text class="${classePreco}" x="${x + w * 0.09}" y="${numY}" dominant-baseline="central"
+          font-size="${(corpo * 0.55).toFixed(0)}" fill="url(#ouro)">R$</text>
+    <g transform="translate(${numX},${numY}) scale(${escala.toFixed(3)}) translate(${-numX},${-numY})">
+      <text class="${classePreco}" x="${numX}" y="${numY}" dominant-baseline="central" text-anchor="middle"
             font-size="${corpo}" fill="${corNumero}"${brilho ? ' filter="url(#brilhoSuave)"' : ""}>{{ITEM_${n}_PRECO}}</text>
-      <text class="${classeUnidade}" x="${x + w - w * 0.06}" y="${meio - ajusteFino}" dominant-baseline="central" text-anchor="end"
-            font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
     </g>
+    <text class="${classeUnidade}" x="${x + w - w * 0.06}" y="${numY}" dominant-baseline="central" text-anchor="end"
+          font-size="${(corpo * 0.46).toFixed(0)}" fill="url(#ouro)">{{ITEM_${n}_UNIDADE}}</text>
   </g>`;
 }
 
@@ -406,7 +410,11 @@ function grade8Classico(escalas: EscalasTema): ResultadoGrade {
       };
 
       partes.push(
-        foto(n, fotoCaixa, escalas.foto, true, off.foto),
+        // Etapa 32: sem recorte (recortar=false) - a foto pode crescer
+        // pra fora da propria caixa, dando o efeito de "saltar" do
+        // encarte (pedido do usuario), em vez de ficar presa num
+        // retangulo invisivel do tamanho da caixa original.
+        foto(n, fotoCaixa, escalas.foto, false, off.foto),
         // nome() padrao (linhas, sem folha) - essa versao da imagem de
         // fundo nao traz mais essa faixa pronta, ao contrario da
         // primeira que o usuario mandou
@@ -474,8 +482,12 @@ function grade8Classico(escalas: EscalasTema): ResultadoGrade {
   `);
 
   // Data: unico texto do rodape que a barra de validade deixa vazio.
+  // y calibrado medindo a propria imagem (amostrando pixel a pixel a
+  // borda dourada do "pill" no x central): topo em ~1298, base em
+  // ~1336 (nativos), centro real 1317 - o texto estava em 1310,
+  // 7px alto demais.
   partes.push(
-    `<text class="sans" x="${nx(547)}" y="${ny(1310)}" dominant-baseline="central" text-anchor="middle"
+    `<text class="sans" x="${nx(547)}" y="${ny(1317)}" dominant-baseline="central" text-anchor="middle"
            font-size="17" letter-spacing="2.8" fill="url(#ouro)" font-weight="500">PROMOÇÃO VÁLIDA {{VALIDADE}} OU ENQUANTO DURAR NOSSO ESTOQUE</text>`
   );
 
@@ -513,11 +525,12 @@ function grade8ComFundo(
 
       partes.push(
         moldura(card, 18),
+        // Etapa 32: sem recorte, mesmo motivo do grade8Classico acima.
         foto(
           n,
           { x: x + 14, y: y + 12, w: 150, h: 152 },
           escalas.foto,
-          true,
+          false,
           off.foto
         ),
         nome(
