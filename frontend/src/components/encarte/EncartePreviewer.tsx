@@ -18,8 +18,14 @@ export type { EscalasTema } from "@/lib/temas/promocaoDoDia";
 export interface EncartePreviewerProps {
   /** produtos a exibir; so os primeiros N (conforme o formato) sao usados */
   produtos: ItemEncarte[];
-  /** qual tema usar; por enquanto so existe "Promoção do Dia" */
+  /** qual tema embutido usar; ignorado se temaCustomizado for passado */
   temaId?: string;
+  /**
+   * Etapa "Estúdio de Modelos": um Theme (banco, "Meus modelos") já
+   * convertido via temaDoCustomizado() - quando presente, usa esse SVG
+   * em vez de procurar entre os temas embutidos.
+   */
+  temaCustomizado?: Tema;
   /** quantos produtos a grade comporta: 1, 2, 4, 6, 8 ou 10 */
   formato: FormatoEncarte;
   titulo?: string;
@@ -77,6 +83,7 @@ function encontrarTema(
 export function EncartePreviewer({
   produtos,
   temaId,
+  temaCustomizado,
   formato,
   titulo = "PROMOÇÃO",
   subtitulo = "DO DIA",
@@ -86,7 +93,7 @@ export function EncartePreviewer({
   escalas = ESCALA_PADRAO,
   className = "",
 }: EncartePreviewerProps) {
-  const tema = encontrarTema(formato, temaId, escalas);
+  const tema = temaCustomizado ?? encontrarTema(formato, temaId, escalas);
 
   if (!tema) {
     return (

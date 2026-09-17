@@ -52,6 +52,23 @@ export const themeService = {
     await prisma.theme.delete({ where: { id } });
   },
 
+  async duplicar(userId: string, id: string) {
+    const original = await this.buscar(userId, id);
+    return prisma.theme.create({
+      data: {
+        companyId: original.companyId,
+        themeName: `${original.themeName} (cópia)`,
+        day: original.day,
+        format1Svg: original.format1Svg,
+        format2Svg: original.format2Svg,
+        format4Svg: original.format4Svg,
+        format6Svg: original.format6Svg,
+        format8Svg: original.format8Svg,
+        format10Svg: original.format10Svg,
+      },
+    });
+  },
+
   async garantirPropriedade(userId: string, id: string) {
     const existe = await prisma.theme.findFirst({
       where: { id, company: { userId } },

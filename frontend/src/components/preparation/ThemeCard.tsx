@@ -5,7 +5,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
-import { useRemoverTema, useTheme, type ThemeResumo } from "@/hooks/useThemes";
+import {
+  useDuplicarTema,
+  useRemoverTema,
+  useTheme,
+  type ThemeResumo,
+} from "@/hooks/useThemes";
 
 const ROTULO_DIA: Record<string, string> = {
   segunda: "Segunda",
@@ -28,6 +33,7 @@ export function ThemeCard({
 }) {
   const { data: completo, isLoading } = useTheme(tema.id);
   const remover = useRemoverTema(companyId);
+  const duplicar = useDuplicarTema(companyId);
   const { mostrar } = useToast();
   const [confirmando, setConfirmando] = useState(false);
 
@@ -42,6 +48,18 @@ export function ThemeCard({
       );
     } finally {
       setConfirmando(false);
+    }
+  }
+
+  async function duplicarTema() {
+    try {
+      await duplicar.mutateAsync(tema.id);
+      mostrar("sucesso", `"${tema.themeName}" duplicado.`);
+    } catch (err) {
+      mostrar(
+        "erro",
+        err instanceof Error ? err.message : "Não foi possível duplicar"
+      );
     }
   }
 
@@ -73,13 +91,21 @@ export function ThemeCard({
             Ativo
           </span>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[rgb(var(--line))] pt-4">
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[rgb(var(--line))] pt-4">
           <Button
             variante="secundario"
             className="w-full px-3 py-1.5 text-xs"
             onClick={onEditar}
           >
             Editar
+          </Button>
+          <Button
+            variante="secundario"
+            className="w-full px-3 py-1.5 text-xs"
+            disabled={duplicar.isPending}
+            onClick={() => void duplicarTema()}
+          >
+            Duplicar
           </Button>
           <Button
             variante="fantasma"

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,6 +18,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useEncarte } from "@/hooks/useEncartes";
 import { useStores } from "@/hooks/useStores";
+import { useTheme, useThemes } from "@/hooks/useThemes";
 import {
   baixarBlob,
   exportarEncarte,
@@ -30,6 +32,7 @@ import {
   escalasComPadrao,
   type EscalasTema,
 } from "@/lib/temas/promocaoDoDia";
+import { temaDoCustomizado } from "@/lib/temas/temaCustomizado";
 import { uploadArquivo } from "@/lib/upload";
 import type { FormatoEncarte } from "@/types";
 
@@ -114,7 +117,12 @@ export default function GenerateEncartePage() {
     };
   }, [previewMobileAberto]);
 
-  const [temaFamilia, setTemaFamilia] = useState(TEMAS_DISPONIVEIS[0].familia);
+  // "Usar este modelo" na galeria (/temas) manda o id do tema pela URL
+  // - so vale como ponto de partida (rascunho carregado ou troca manual
+  // no seletor sobrescrevem depois).
+  const [temaFamilia, setTemaFamilia] = useState(
+    () => searchParams.get("temaId") ?? TEMAS_DISPONIVEIS[0].familia
+  );
   const [formato, setFormato] = useState<FormatoEncarte>(FORMATO_UNICO);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [mostrarSalvar, setMostrarSalvar] = useState(false);
@@ -140,6 +148,18 @@ export default function GenerateEncartePage() {
     endereco: loja.address.toUpperCase(),
     whatsapp: loja.deliveryPhones.join(" / "),
   }));
+
+  // Estúdio de Modelos: "temaFamilia" guarda "promocao-do-dia" (tema
+  // embutido) OU o id de um Theme (banco, "Meus modelos") - os dois
+  // convivem no mesmo seletor abaixo. So busca o conteudo completo
+  // (SVG) do Theme quando um deles esta selecionado.
+  const { data: temasCustomizados } = useThemes(empresa?.id ?? null);
+  const temaCustomizadoId =
+    temaFamilia === TEMAS_DISPONIVEIS[0].familia ? null : temaFamilia;
+  const { data: temaCustomizadoCompleto } = useTheme(temaCustomizadoId);
+  const temaCustomizado = temaCustomizadoCompleto
+    ? temaDoCustomizado(temaCustomizadoCompleto, formato)
+    : undefined;
 
   // Etapa 33: assim que a empresa carrega pela primeira vez, aplica o
   // "modelo padrao" dela (editado fora daqui, em Modelos > Ajustes) em
@@ -403,6 +423,7 @@ export default function GenerateEncartePage() {
     <EncartePreviewer
       produtos={itensParaPreview}
       temaId={`${temaFamilia}-${formato}`}
+      temaCustomizado={temaCustomizado}
       formato={formato}
       lojas={lojasParaEncarte}
       validade={new Date().toLocaleDateString("pt-BR", {
@@ -781,7 +802,44 @@ export default function GenerateEncartePage() {
                         </button>
                       );
                     })}
+
+                    {temasCustomizados?.map((tema) => {
+                      const selecionado = temaFamilia === tema.id;
+                      return (
+                        <button
+                          key={tema.id}
+                          type="button"
+                          onClick={() => setTemaFamilia(tema.id)}
+                          className={`overflow-hidden rounded-2xl border-2 text-left transition ${selecionado ? "border-[rgb(var(--brand))] shadow-[0_12px_30px_-20px_rgb(var(--brand))]" : "border-[rgb(var(--line))] hover:border-[rgb(var(--brand)/0.4)]"}`}
+                        >
+                          <span className="flex h-28 items-center justify-center bg-[rgb(var(--surface-subtle))] px-4 text-center text-3xl">
+                            🎨
+                          </span>
+                          <span className="flex items-center justify-between gap-2 bg-[rgb(var(--surface))] px-4 py-3">
+                            <span>
+                              <span className="block truncate text-sm font-bold">
+                                {tema.themeName}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-neutral-400">
+                                Seu modelo
+                              </span>
+                            </span>
+                            <span
+                              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${selecionado ? "bg-[rgb(var(--brand))] text-white dark:text-neutral-950" : "border border-[rgb(var(--line))]"}`}
+                            >
+                              {selecionado ? "✓" : ""}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
+                  <Link
+                    href="/preparation/themes"
+                    className="mt-3 inline-flex text-xs font-semibold text-[rgb(var(--brand))] hover:underline"
+                  >
+                    Criar ou editar meus modelos →
+                  </Link>
                 </Card>
 
                 <Card>

@@ -110,3 +110,12 @@ export function useRemoverTema(companyId: string) {
     onSuccess: invalidar,
   });
 }
+
+export function useDuplicarTema(companyId: string) {
+  const invalidar = useInvalidar(companyId);
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<ThemeCompleto>(`/api/themes/${id}/duplicate`, {}),
+    onSuccess: invalidar,
+  });
+}

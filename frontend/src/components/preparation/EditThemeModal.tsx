@@ -213,6 +213,29 @@ function FormularioTema({
         </Campo>
       </div>
 
+      <div className="rounded-xl border border-[rgb(var(--line))] bg-[rgb(var(--surface-subtle))] p-3 text-xs text-neutral-500 dark:text-neutral-400">
+        Este modelo já aparece pronto pra usar em Gerar encarte. Se você enviar
+        um SVG próprio, pode incluir marcadores como{" "}
+        <code className="rounded bg-black/5 px-1 py-0.5 font-mono dark:bg-white/10">
+          {"{{ITEM_1_NOME}}"}
+        </code>
+        ,{" "}
+        <code className="rounded bg-black/5 px-1 py-0.5 font-mono dark:bg-white/10">
+          {"{{ITEM_1_PRECO}}"}
+        </code>
+        ,{" "}
+        <code className="rounded bg-black/5 px-1 py-0.5 font-mono dark:bg-white/10">
+          {"{{ITEM_1_UNIDADE}}"}
+        </code>{" "}
+        e{" "}
+        <code className="rounded bg-black/5 px-1 py-0.5 font-mono dark:bg-white/10">
+          {"{{ITEM_1_FOTO}}"}
+        </code>{" "}
+        (até <code className="font-mono">ITEM_8</code>) que serão trocados pelos
+        dados reais de cada oferta. Sem eles, a arte aparece sempre igual, sem
+        os produtos sobrepostos.
+      </div>
+
       <div>
         <span className="mb-2 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
           Arte do modelo para 8 itens — SVG ou imagem (PNG/JPG gera uma prévia

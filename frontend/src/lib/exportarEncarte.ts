@@ -15,7 +15,9 @@ export const RESOLUCOES: ResolucaoExport[] = [
 
 // Mesmo tom do fundo do tema (radial escuro), usado nas bordas quando
 // a resolucao pedida nao bate com a proporcao nativa do template.
-const FUNDO = "#050505";
+// Exportado pra /temas/editor conseguir simular a mesma letterbox no
+// preview "Stories" sem duplicar a cor.
+export const FUNDO = "#050505";
 
 // Tempo maximo tolerado para o html-to-image rasterizar o elemento.
 // Sem isso, uma falha silenciosa (imagem/fonte que nunca resolve) deixa

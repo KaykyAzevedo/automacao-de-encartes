@@ -12,6 +12,7 @@ import { Campo, Select } from "@/components/ui/Input";
 import { SkeletonLista } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useAtualizarModeloPadrao, useCompanies } from "@/hooks/useCompanies";
+import { FUNDO, RESOLUCOES } from "@/lib/exportarEncarte";
 import { exemploCom } from "@/lib/temas/exemplo";
 import {
   ESCALA_PADRAO,
@@ -34,6 +35,8 @@ export default function EditorDeModeloPage() {
 
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [carregado, setCarregado] = useState(false);
+  const [modo, setModo] = useState<"facil" | "avancado">("facil");
+  const [resolucaoIndex, setResolucaoIndex] = useState(0);
 
   // Carrega o modelo salvo da empresa assim que ela chega - so uma vez
   // por empresa (troca de empresa reresseta pra recarregar de novo).
@@ -131,13 +134,37 @@ export default function EditorDeModeloPage() {
             />
 
             <Card>
-              <h2 className="mb-1 text-base font-bold">
-                Fontes, tamanhos e posição
-              </h2>
-              <p className="mb-5 text-xs text-neutral-500 dark:text-neutral-400">
-                Acompanhe a prévia ao lado enquanto ajusta.
-              </p>
-              <SizeEditor currentSizes={escalas} onSizeChange={setEscalas} />
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold">
+                    Fontes, tamanhos e posição
+                  </h2>
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    Acompanhe a prévia ao lado enquanto ajusta.
+                  </p>
+                </div>
+                <div className="inline-flex shrink-0 rounded-xl bg-[rgb(var(--surface-subtle))] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setModo("facil")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${modo === "facil" ? "bg-[rgb(var(--surface))] text-[rgb(var(--brand))] shadow-sm" : "text-neutral-500"}`}
+                  >
+                    Fácil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModo("avancado")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${modo === "avancado" ? "bg-[rgb(var(--surface))] text-[rgb(var(--brand))] shadow-sm" : "text-neutral-500"}`}
+                  >
+                    Avançado
+                  </button>
+                </div>
+              </div>
+              <SizeEditor
+                currentSizes={escalas}
+                onSizeChange={setEscalas}
+                modo={modo}
+              />
             </Card>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -159,24 +186,47 @@ export default function EditorDeModeloPage() {
           </div>
 
           <aside className="lg:sticky lg:top-24">
-            <div className="mb-3">
-              <p className="text-sm font-bold">Prévia ao vivo</p>
-              <p className="text-xs text-neutral-400">
-                Produtos de exemplo, só para conferir o visual.
-              </p>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold">Prévia ao vivo</p>
+                <p className="text-xs text-neutral-400">
+                  Produtos de exemplo, só para conferir o visual.
+                </p>
+              </div>
+              <div className="inline-flex shrink-0 rounded-xl bg-[rgb(var(--surface-subtle))] p-1">
+                {RESOLUCOES.map((r, i) => (
+                  <button
+                    key={r.rotulo}
+                    type="button"
+                    onClick={() => setResolucaoIndex(i)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${resolucaoIndex === i ? "bg-[rgb(var(--surface))] text-[rgb(var(--brand))] shadow-sm" : "text-neutral-500"}`}
+                  >
+                    {i === 0 ? "Feed" : "Stories"}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="rounded-2xl border border-[rgb(var(--line))] bg-[rgb(var(--surface))] p-3 shadow-[0_22px_50px_-34px_rgb(0_0_0/0.5)]">
               {carregado ? (
-                <EncartePreviewer
-                  produtos={exemplo.itens}
-                  formato={8}
-                  titulo={exemplo.titulo}
-                  subtitulo={exemplo.subtitulo}
-                  selo={exemplo.selo}
-                  lojas={exemplo.lojas}
-                  validade={exemplo.validade}
-                  escalas={escalas}
-                />
+                <div
+                  className="mx-auto flex items-center justify-center overflow-hidden rounded-xl"
+                  style={{
+                    aspectRatio: `${RESOLUCOES[resolucaoIndex].largura} / ${RESOLUCOES[resolucaoIndex].altura}`,
+                    backgroundColor: FUNDO,
+                  }}
+                >
+                  <EncartePreviewer
+                    produtos={exemplo.itens}
+                    formato={8}
+                    titulo={exemplo.titulo}
+                    subtitulo={exemplo.subtitulo}
+                    selo={exemplo.selo}
+                    lojas={exemplo.lojas}
+                    validade={exemplo.validade}
+                    escalas={escalas}
+                    className="w-full"
+                  />
+                </div>
               ) : (
                 <SkeletonLista />
               )}

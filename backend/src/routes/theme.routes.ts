@@ -23,3 +23,4 @@ themeRoutes.post("/", themeController.criar);
 themeRoutes.get("/:id", themeController.buscar);
 themeRoutes.put("/:id", themeController.atualizar);
 themeRoutes.delete("/:id", themeController.remover);
+themeRoutes.post("/:id/duplicate", themeController.duplicar);
