@@ -67,4 +67,15 @@ export const encarteDraftController = {
       next(e);
     }
   },
+
+  async duplicar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usuario = usuarioDe(req);
+      const { id } = encarteDraftIdSchema.parse(req.params);
+      const copia = await encarteDraftService.duplicar(usuario.id, id);
+      res.status(201).json(copia);
+    } catch (e) {
+      next(e);
+    }
+  },
 };

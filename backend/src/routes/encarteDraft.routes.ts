@@ -12,3 +12,4 @@ encarteDraftRoutes.get("/", encarteDraftController.listar);
 encarteDraftRoutes.get("/:id", encarteDraftController.buscar);
 encarteDraftRoutes.put("/:id", encarteDraftController.atualizar);
 encarteDraftRoutes.delete("/:id", encarteDraftController.remover);
+encarteDraftRoutes.post("/:id/duplicate", encarteDraftController.duplicar);

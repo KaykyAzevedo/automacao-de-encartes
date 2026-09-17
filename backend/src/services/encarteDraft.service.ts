@@ -78,6 +78,27 @@ export const encarteDraftService = {
     await prisma.encarteDraft.delete({ where: { id } });
   },
 
+  async duplicar(userId: string, id: string) {
+    const original = await this.buscar(userId, id);
+    return prisma.encarteDraft.create({
+      data: {
+        userId,
+        companyId: original.companyId,
+        name: `${original.name} (cópia)`,
+        productList: original.productList,
+        selectedThemeId: original.selectedThemeId,
+        selectedFormat: original.selectedFormat,
+        parsedProducts: original.parsedProducts as Prisma.InputJsonValue,
+        edits: original.edits as Prisma.InputJsonValue,
+        // a arte gerada (se existir) pertence ao rascunho original - a
+        // copia comeca sem, como um rascunho novo, ate o usuario gerar
+        // de novo (evita dois drafts "donos" do mesmo arquivo)
+        pngUrl: null,
+        jpgUrl: null,
+      },
+    });
+  },
+
   async garantirPropriedade(userId: string, id: string) {
     const existe = await prisma.encarteDraft.findFirst({
       where: { id, userId },

@@ -86,3 +86,13 @@ export function useRemoverEncarte(companyId: string) {
       qc.invalidateQueries({ queryKey: chavesEncarte.daEmpresa(companyId) }),
   });
 }
+
+export function useDuplicarEncarte(companyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<EncarteDraftCompleto>(`/api/encartes/${id}/duplicate`, {}),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: chavesEncarte.daEmpresa(companyId) }),
+  });
+}
