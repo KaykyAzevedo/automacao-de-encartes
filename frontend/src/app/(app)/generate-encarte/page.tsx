@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { CadastrarProdutoModal } from "@/components/encarte/CadastrarProdutoModal";
 import { EncartePreviewer } from "@/components/encarte/EncartePreviewer";
 import { FundoPersonalizadoCard } from "@/components/encarte/FundoPersonalizadoCard";
 import { SaveDraftModal } from "@/components/encarte/SaveDraftModal";
@@ -117,6 +118,9 @@ export default function GenerateEncartePage() {
   const [formato, setFormato] = useState<FormatoEncarte>(FORMATO_UNICO);
   const [escalas, setEscalas] = useState<EscalasTema>(ESCALA_PADRAO);
   const [mostrarSalvar, setMostrarSalvar] = useState(false);
+  const [cadastrandoIndice, setCadastrandoIndice] = useState<number | null>(
+    null
+  );
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [resolucaoIndex, setResolucaoIndex] = useState(0);
@@ -299,6 +303,21 @@ export default function GenerateEncartePage() {
     }
   }
 
+  function produtoCadastrado(
+    indice: number,
+    produto: {
+      id: string;
+      name: string;
+      photoS3Url: string;
+    }
+  ) {
+    escolherSugestao(indice, {
+      product: { ...produto, userPhotos: [] },
+      confidence: 1,
+    });
+    setCadastrandoIndice(null);
+  }
+
   function escolherSugestao(indice: number, sugestao: ResultadoMatch) {
     setResultados((atual) =>
       atual
@@ -344,6 +363,35 @@ export default function GenerateEncartePage() {
     unit: item.unidade,
     photoUrl: item.fotoUrl,
   }));
+
+  // "Verificacao final" do passo 4 (fluxograma "Uso Diário") - so
+  // avisos informativos, nao bloqueia o download: o usuario pode
+  // preferir baixar mesmo assim (ex.: loja sem telefone de proposito).
+  const itensSemPreco =
+    resultados?.filter((r) => r.escolhida && !r.linha.preco).length ?? 0;
+  const semLoja = lojasParaEncarte.length === 0;
+  const semTelefone = !semLoja && lojasParaEncarte.every((l) => !l.whatsapp);
+  const verificacoes = [
+    {
+      label: "Fotos escolhidas para todos os itens",
+      ok: itensParaPreview.length > 0,
+    },
+    {
+      label:
+        itensSemPreco > 0
+          ? `${itensSemPreco} item(ns) sem preço informado`
+          : "Preços preenchidos",
+      ok: itensSemPreco === 0,
+    },
+    {
+      label: semLoja
+        ? "Nenhuma loja cadastrada"
+        : semTelefone
+          ? "Loja sem WhatsApp cadastrado"
+          : "Loja(s) com endereço e WhatsApp",
+      ok: !semLoja && !semTelefone,
+    },
+  ];
 
   const reconhecidos = resultados?.filter((r) => r.escolhida).length ?? 0;
   const linhasDigitadas = texto
@@ -631,13 +679,22 @@ export default function GenerateEncartePage() {
                         </div>
                       ) : null}
 
-                      {!r.carregando &&
-                      !r.escolhida &&
-                      !r.erro &&
-                      r.suggestions.length === 0 ? (
-                        <p className="mt-2 text-xs text-neutral-400">
-                          Nenhum produto parecido foi encontrado no catálogo.
-                        </p>
+                      {!r.carregando && !r.escolhida && !r.erro ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {r.suggestions.length === 0 ? (
+                            <p className="text-xs text-neutral-400">
+                              Nenhum produto parecido foi encontrado no
+                              catálogo.
+                            </p>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => setCadastrandoIndice(i)}
+                            className="text-xs font-semibold text-[rgb(var(--brand))] hover:underline"
+                          >
+                            Cadastrar este produto →
+                          </button>
+                        </div>
                       ) : null}
                     </li>
                   ))}
@@ -667,6 +724,17 @@ export default function GenerateEncartePage() {
                   Personalizar encarte →
                 </Button>
               </div>
+
+              {cadastrandoIndice !== null && resultados ? (
+                <CadastrarProdutoModal
+                  companyId={empresa.id}
+                  nomeSugerido={resultados[cadastrandoIndice].linha.nome}
+                  onCriado={(produto) =>
+                    produtoCadastrado(cadastrandoIndice, produto)
+                  }
+                  onFechar={() => setCadastrandoIndice(null)}
+                />
+              ) : null}
             </div>
           ) : null}
 
@@ -795,6 +863,34 @@ export default function GenerateEncartePage() {
           {etapaAtiva === 4 && itensParaPreview.length > 0 ? (
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(320px,0.65fr)_minmax(0,1fr)]">
               <div className="space-y-5 lg:sticky lg:top-24">
+                <Card>
+                  <h2 className="text-base font-bold">Verificação final</h2>
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    Confira antes de baixar.
+                  </p>
+                  <ul className="mt-4 space-y-2.5">
+                    {verificacoes.map((v) => (
+                      <li
+                        key={v.label}
+                        className="flex items-center gap-2.5 text-sm"
+                      >
+                        <span
+                          className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold ${v.ok ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}
+                        >
+                          {v.ok ? "✓" : "!"}
+                        </span>
+                        <span
+                          className={
+                            v.ok ? "" : "text-amber-700 dark:text-amber-400"
+                          }
+                        >
+                          {v.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+
                 <Card>
                   <div className="mb-5 flex items-start gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgb(var(--accent-soft))] text-lg text-[rgb(var(--accent))]">

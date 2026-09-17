@@ -23,6 +23,21 @@ export function useProducts(companyId: string | null, search?: string) {
   });
 }
 
+// Cadastra um produto novo direto no catalogo da empresa - usado no
+// "cadastrar sem sair" do passo de revisao do gerador de encarte,
+// quando a lista colada nao bate com nada que ja existe.
+export function useCriarProduct(companyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dados: { name: string; photoS3Url: string }) =>
+      api.post<Product>("/api/products", { ...dados, companyId }),
+    onSuccess: () =>
+      qc.invalidateQueries({
+        queryKey: chavesProduto.daEmpresa(companyId),
+      }),
+  });
+}
+
 // Sobe uma foto pro banco de fotos DESSE produto (Etapa 21) - o
 // backend ja devolve o produto com userPhotos atualizado, entao so
 // precisa invalidar a lista pra puxar o resto dos campos junto.
