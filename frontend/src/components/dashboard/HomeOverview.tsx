@@ -79,7 +79,10 @@ export function HomeOverview({ nome }: { nome: string }) {
     { label: "Empresa cadastrada", pronto: Boolean(empresas?.length) },
     { label: "Loja cadastrada", pronto: totais.lojas > 0 },
     { label: "Catálogo de produtos", pronto: totais.produtos > 0 },
-    { label: "Modelo configurado", pronto: totais.modelos > 0 },
+    {
+      label: "Modelo configurado",
+      pronto: totais.modelos > 0 || Boolean(empresa?.defaultEscalas),
+    },
   ];
   const concluidos = checklist.filter((item) => item.pronto).length;
 
@@ -230,49 +233,76 @@ export function HomeOverview({ nome }: { nome: string }) {
         </Card>
 
         <Card>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-bold">Configuração inicial</h2>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                {concluidos} de {checklist.length} concluídos
-              </p>
-            </div>
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-[rgb(var(--accent-soft))] text-sm font-bold text-[rgb(var(--accent))]">
-              {Math.round((concluidos / checklist.length) * 100)}%
-            </span>
-          </div>
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-[rgb(var(--surface-subtle))]">
-            <div
-              className="h-full rounded-full bg-[rgb(var(--brand))] transition-all"
-              style={{ width: `${(concluidos / checklist.length) * 100}%` }}
-            />
-          </div>
-          <ul className="mt-5 space-y-3">
-            {checklist.map((item) => (
-              <li key={item.label} className="flex items-center gap-3 text-sm">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${item.pronto ? "bg-[rgb(var(--brand))] text-white dark:text-neutral-950" : "border border-[rgb(var(--line))] text-neutral-400"}`}
-                >
-                  {item.pronto ? "✓" : ""}
+          {concluidos === checklist.length ? (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[rgb(var(--brand))] text-lg text-white dark:text-neutral-950">
+                  ✓
                 </span>
-                <span
-                  className={
-                    item.pronto
-                      ? "text-neutral-500 line-through dark:text-neutral-400"
-                      : "font-medium"
-                  }
-                >
-                  {item.label}
+                <div>
+                  <h2 className="text-base font-bold">Tudo configurado</h2>
+                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    Empresa, loja, catálogo e modelo prontos.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/preparation"
+                className="mt-6 inline-flex text-sm font-semibold text-[rgb(var(--brand))] hover:underline"
+              >
+                Gerenciar cadastros →
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold">Configuração inicial</h2>
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    {concluidos} de {checklist.length} concluídos
+                  </p>
+                </div>
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-[rgb(var(--accent-soft))] text-sm font-bold text-[rgb(var(--accent))]">
+                  {Math.round((concluidos / checklist.length) * 100)}%
                 </span>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/preparation"
-            className="mt-6 inline-flex text-sm font-semibold text-[rgb(var(--brand))] hover:underline"
-          >
-            Completar cadastros →
-          </Link>
+              </div>
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-[rgb(var(--surface-subtle))]">
+                <div
+                  className="h-full rounded-full bg-[rgb(var(--brand))] transition-all"
+                  style={{ width: `${(concluidos / checklist.length) * 100}%` }}
+                />
+              </div>
+              <ul className="mt-5 space-y-3">
+                {checklist.map((item) => (
+                  <li
+                    key={item.label}
+                    className="flex items-center gap-3 text-sm"
+                  >
+                    <span
+                      className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${item.pronto ? "bg-[rgb(var(--brand))] text-white dark:text-neutral-950" : "border border-[rgb(var(--line))] text-neutral-400"}`}
+                    >
+                      {item.pronto ? "✓" : ""}
+                    </span>
+                    <span
+                      className={
+                        item.pronto
+                          ? "text-neutral-500 line-through dark:text-neutral-400"
+                          : "font-medium"
+                      }
+                    >
+                      {item.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/onboarding"
+                className="mt-6 inline-flex text-sm font-semibold text-[rgb(var(--brand))] hover:underline"
+              >
+                Continuar configuração →
+              </Link>
+            </>
+          )}
         </Card>
       </div>
     </div>
