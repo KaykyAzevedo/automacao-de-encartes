@@ -182,7 +182,7 @@ export const RODAPE = `
         fill="#e6e6e6">{{LOJA_1_ENDERECO}}</text>
   <g><use href="#zap" transform="translate(187,1230)"/></g>
   <text class="sans" x="206" y="1237" font-size="19" letter-spacing="1.2"
-        fill="#e6e6e6">WHATSAPP: {{LOJA_1_WHATSAPP}}</text>
+        fill="#e6e6e6">{{LOJA_1_WHATSAPP_TEXTO}}</text>
 
   <line x1="540" y1="1136" x2="540" y2="1206" stroke="url(#ouroLinha)" stroke-width="1.4"/>
   <g fill="url(#ouro)"><use href="#folhas" transform="translate(540,1236) scale(0.6)"/></g>
@@ -194,7 +194,7 @@ export const RODAPE = `
         fill="#e6e6e6">{{LOJA_2_ENDERECO}}</text>
   <g><use href="#zap" transform="translate(653,1230)"/></g>
   <text class="sans" x="672" y="1237" font-size="19" letter-spacing="1.2"
-        fill="#e6e6e6">WHATSAPP: {{LOJA_2_WHATSAPP}}</text>
+        fill="#e6e6e6">{{LOJA_2_WHATSAPP_TEXTO}}</text>
 
   <rect x="52" y="1276" width="976" height="50" rx="25"
         fill="none" stroke="#b8860f" stroke-width="1.6"/>

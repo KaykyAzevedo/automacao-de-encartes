@@ -27,6 +27,13 @@ export function renderizarTema(tema: Tema, dados: DadosEncarte): string {
     mapa[`LOJA_${n}_NOME`] = escapar(loja.nome);
     mapa[`LOJA_${n}_ENDERECO`] = escapar(loja.endereco);
     mapa[`LOJA_${n}_WHATSAPP`] = escapar(loja.whatsapp);
+    // Etapa 38: rotulo "WHATSAPP: " embutido no proprio marcador, nao
+    // fixo no SVG - com menos lojas selecionadas que os slots do
+    // rodape, o slot sobrando fica todo vazio (nome/endereco ja
+    // ficavam, so o rotulo sem o marcador continuava visivel sozinho).
+    mapa[`LOJA_${n}_WHATSAPP_TEXTO`] = loja.whatsapp
+      ? `WHATSAPP: ${escapar(loja.whatsapp)}`
+      : "";
   });
 
   // um slot por posicao da grade; sobra vira vazio, e nao quebra o SVG

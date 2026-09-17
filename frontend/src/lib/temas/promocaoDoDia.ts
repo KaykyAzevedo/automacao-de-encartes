@@ -494,7 +494,7 @@ function grade8Classico(escalas: EscalasTema): ResultadoGrade {
           fill="#e6e6e6">{{LOJA_1_ENDERECO}}</text>
     <g><use href="#zap" transform="translate(187,${yEndereco + 90})"/></g>
     <text class="sans" x="206" y="${yEndereco + 97}" font-size="17" letter-spacing="1.1"
-          fill="#e6e6e6">WHATSAPP: {{LOJA_1_WHATSAPP}}</text>
+          fill="#e6e6e6">{{LOJA_1_WHATSAPP_TEXTO}}</text>
 
     <line x1="540" y1="${yEndereco}" x2="540" y2="${yEndereco + 68}" stroke="url(#ouroLinha)" stroke-width="1.4"/>
 
@@ -505,7 +505,7 @@ function grade8Classico(escalas: EscalasTema): ResultadoGrade {
           fill="#e6e6e6">{{LOJA_2_ENDERECO}}</text>
     <g><use href="#zap" transform="translate(653,${yEndereco + 90})"/></g>
     <text class="sans" x="672" y="${yEndereco + 97}" font-size="17" letter-spacing="1.1"
-          fill="#e6e6e6">WHATSAPP: {{LOJA_2_WHATSAPP}}</text>
+          fill="#e6e6e6">{{LOJA_2_WHATSAPP_TEXTO}}</text>
   `);
 
   // Data: unico texto do rodape que a barra de validade deixa vazio.

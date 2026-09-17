@@ -143,11 +143,37 @@ export default function GenerateEncartePage() {
   // cadastro real). Sem loja cadastrada ainda, os placeholders de
   // loja no SVG so ficam vazios (ver frontend/src/lib/temas/render.ts).
   const { data: lojasDaEmpresa } = useStores(empresa?.id ?? null);
-  const lojasParaEncarte = (lojasDaEmpresa ?? []).map((loja) => ({
-    nome: loja.name.toUpperCase(),
-    endereco: loja.address.toUpperCase(),
-    whatsapp: loja.deliveryPhones.join(" / "),
-  }));
+
+  // Etapa 38: nem toda oferta vale pra todas as lojas da empresa - por
+  // padrao comeca com todas marcadas (comportamento de sempre), mas da
+  // pra desmarcar as que nao entram no rodape deste encarte especifico.
+  // null = ainda nao inicializado (undefined tambem cobre lojas com 0
+  // itens carregadas ainda).
+  const [lojasSelecionadasIds, setLojasSelecionadasIds] = useState<
+    string[] | null
+  >(null);
+  useEffect(() => {
+    if (!lojasDaEmpresa || lojasSelecionadasIds !== null) return;
+    setLojasSelecionadasIds(lojasDaEmpresa.map((l) => l.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lojasDaEmpresa]);
+
+  const lojasParaEncarte = (lojasDaEmpresa ?? [])
+    .filter((loja) => (lojasSelecionadasIds ?? []).includes(loja.id))
+    .map((loja) => ({
+      nome: loja.name.toUpperCase(),
+      endereco: loja.address.toUpperCase(),
+      whatsapp: loja.deliveryPhones.join(" / "),
+    }));
+
+  function alternarLoja(id: string) {
+    setLojasSelecionadasIds((atual) => {
+      const lista = atual ?? [];
+      return lista.includes(id)
+        ? lista.filter((l) => l !== id)
+        : [...lista, id];
+    });
+  }
 
   // Estúdio de Modelos: "temaFamilia" guarda "promocao-do-dia" (tema
   // embutido) OU o id de um Theme (banco, "Meus modelos") - os dois
@@ -208,6 +234,12 @@ export default function GenerateEncartePage() {
       precoOffsetY: edicoes.precoOffsetY ?? ESCALA_PADRAO.precoOffsetY,
       fundoUrl: edicoes.fundoUrl,
     });
+    // Etapa 38: rascunho salvo antes desta etapa nao tem essa chave -
+    // fica null, e o efeito de cima preenche com "todas as lojas"
+    // assim que lojasDaEmpresa carregar (mesmo comportamento de sempre).
+    const lojasSalvas = (draft.edits as { lojasSelecionadasIds?: string[] })
+      .lojasSelecionadasIds;
+    setLojasSelecionadasIds(lojasSalvas ?? null);
     void processar(draft.productList);
     mostrar("sucesso", `Rascunho "${draft.name}" carregado.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -856,6 +888,44 @@ export default function GenerateEncartePage() {
                   </div>
                 </Card>
 
+                {lojasDaEmpresa && lojasDaEmpresa.length > 1 ? (
+                  <Card>
+                    <h2 className="text-base font-bold">Lojas no rodapé</h2>
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      Escolha quais lojas aparecem neste encarte - útil quando a
+                      oferta não vale pra todas.
+                    </p>
+                    <div className="mt-4 space-y-2.5">
+                      {lojasDaEmpresa.map((loja) => {
+                        const marcada = (lojasSelecionadasIds ?? []).includes(
+                          loja.id
+                        );
+                        return (
+                          <label
+                            key={loja.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-[rgb(var(--line))] px-3.5 py-2.5"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={marcada}
+                              onChange={() => alternarLoja(loja.id)}
+                              className="h-4 w-4 accent-[rgb(var(--brand))]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold">
+                                {loja.name}
+                              </span>
+                              <span className="block truncate text-xs text-neutral-400">
+                                {loja.address}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                ) : null}
+
                 <FundoPersonalizadoCard
                   fundoUrl={escalas.fundoUrl}
                   onFundoChange={(url) =>
@@ -1091,7 +1161,10 @@ export default function GenerateEncartePage() {
             selectedThemeId: temaFamilia,
             selectedFormat: formato,
             parsedProducts: parsedProductsParaSalvar,
-            edits: { ...escalas } as Record<string, unknown>,
+            edits: {
+              ...escalas,
+              lojasSelecionadasIds,
+            } as Record<string, unknown>,
           }}
           onSalvo={(nome) => {
             setMostrarSalvar(false);
